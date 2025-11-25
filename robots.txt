@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://www.sansserifspazioeditoriale.it/sitemap.xml
