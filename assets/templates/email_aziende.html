@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+  <title>{{subject}}</title>
+  <style>
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    img { border: 0; outline: 0; text-decoration: none; -ms-interpolation-mode: bicubic; }
+    table { border-collapse: separate; }
+    body { margin:0 !important; padding:0 !important; }
+  </style>
+</head>
+<body id="body" style="margin:0;background:#f6f8f9;padding:24px 14px;font-family:Arial,Helvetica,sans-serif;">
+  <div style="display:none !important; max-height:0 !important; overflow:hidden !important; opacity:0 !important; mso-hide:all; color:transparent; line-height:1px; font-size:1px;">
+    Nuova richiesta inviata dal modulo contatti — {{brandName}}
+  </div>
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" align="center" style="max-width:720px;margin:0 auto;border-collapse:separate;">
+    <tr>
+      <td style="padding:0 0 14px 0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#004c60; background-image:linear-gradient(90deg,#004c60,#02657d); border-radius:14px;">
+          <tr>
+            <td style="padding:18px 20px;color:#ffffff;font-weight:800;font-size:18px;">{{brandName}} — Richiesta ricevuta</td>
+            <td align="right" style="padding:18px 20px;color:#d6eef3;font-size:12px;">{{subject}}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding:0 20px 18px 20px;">
+              <span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#ffffff;color:#004c60;font-weight:700;font-size:12px;">Nuovo contatto</span>
+              <span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#e7fbf4;color:#127b60;font-weight:700;font-size:12px;margin-left:6px;">{{email}}</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e6edf0;border-radius:14px;box-shadow:0 8px 26px rgba(0,0,0,.06);">
+          <tr>
+            <td style="padding:18px 20px 4px 20px;">
+              <div style="font-size:16px;color:#0e1d23;font-weight:800;margin:0 0 6px 0;">Dettagli</div>
+              <div style="height:1px;background:repeating-linear-gradient(90deg,#e7eef1,#e7eef1 6px,transparent 6px,transparent 12px);margin:8px 0 10px 0;"></div>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding:6px 0;font:14px/1.4 Arial,Helvetica,sans-serif;color:#111;width:170px;">Email</td>
+                  <td style="padding:6px 0;font:14px/1.6 Arial,Helvetica,sans-serif;color:#111;">{{email}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font:14px/1.4 Arial,Helvetica,sans-serif;color:#111;">Rag. Sociale</td>
+                  <td style="padding:6px 0;font:14px/1.6 Arial,Helvetica,sans-serif;color:#111;">{{rgs}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font:14px/1.4 Arial,Helvetica,sans-serif;color:#111;">Referente</td>
+                  <td style="padding:6px 0;font:14px/1.6 Arial,Helvetica,sans-serif;color:#111;">{{settore}}</td>
+                </tr>
+              </table>
+
+              <div style="margin:14px 0 6px 0;font-size:15px;color:#0e1d23;font-weight:800;">Messaggio</div>
+              <table role="presentation" cellspacing="0" cellpadding="0" width="100%">
+                <tr>
+                  <td style="background:#f9fdfb;border:1px solid #d8f3e8;border-radius:12px;padding:14px;">
+                    <div style="color:#102126;font:14px/1.6 Arial,Helvetica,sans-serif;">{{msgHtml}}</div>
+                  </td>
+                </tr>
+              </table>
+
+              <div style="padding-top:16px;">
+                <a href="mailto:{{email}}" style="display:inline-block;background:#41f1b6;color:#0d2a23;text-decoration:none;padding:10px 14px;border-radius:999px;font-weight:800;font-size:13px;border:1px solid #b8efde;">
+                  Rispondi al cliente →
+                </a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:10px 20px 16px 20px;">
+              <div style="height:1px;background:#eef3f5;margin:10px 0 14px 0;"></div>
+              <p style="margin:0;color:#5f6b73;font-size:12px;line-height:1.6;">Ricevi questa email perché è stato inviato un modulo di contatto dal sito.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="text-align:center;padding:12px 6px;color:#6b7b83;font:11px/1.6 Arial,Helvetica,sans-serif;">© {{brandName}} — Tutti i diritti riservati</td>
+    </tr>
+  </table>
+</body>
+</html>

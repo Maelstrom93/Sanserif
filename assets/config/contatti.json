@@ -1,0 +1,19 @@
+{
+  "mail_to": "info@sansserifspazioeditoriale.it",
+  "mail_from": "",
+  "brand": "Sans Serif",
+  "subjects": {
+    "privati": "NUOVA RICHIESTA DI PREVENTIVO DA PRIVATO",
+    "aziende": "NUOVA RICHIESTA DI PREVENTIVO DA AZIENDA"
+  },
+  "types": {
+    "privati": {
+      "required": ["email", "nome", "cognome", "msg"],
+      "template": "templates/email_privati.html"
+    },
+    "aziende": {
+      "required": ["email", "rgs", "settore", "msg"],
+      "template": "templates/email_aziende.html"
+    }
+  }
+}
