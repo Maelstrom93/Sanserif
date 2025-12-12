@@ -997,12 +997,14 @@ function uploadCover(array $file): string {
             $fb = null; foreach ($variants as $v) { if ($v['w'] >= 480) { $fb = $v; break; } }
             if (!$fb) $fb = $variants[0] ?? null;
             if ($fb) $fallbackUrl = $fb['url'];
+$GLOBALS['__COVER_LAST_JSON__'] = [
+    'ok' => true,
+    'format' => $fmtExt,
+    'full' => ['url' => $PUBLIC_BASE . '/' . $fullRel, 'type' => $fmtMime],
+    'variants' => $variants
+];
 
-            $GLOBALS['__COVER_LAST_JSON__'] = [
-                'ok'=>true, 'format'=>$fmtExt,
-                'full'=>['url'=>$PUBLIC_BASE.'/'.$fullRel,'type'=>$fmtMime],
-                'variants'=>$variants
-            ];
+
 
             return ltrim($fallbackUrl, '/');
         } catch (Throwable $e) {
@@ -1010,14 +1012,46 @@ function uploadCover(array $file): string {
         }
     }
 
-    // Fallback: copia il file così com’è
-    $ext = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION) ?: 'webp');
-    if (!in_array($ext, ['webp','avif','jpg','jpeg','png'], true)) $ext = 'webp';
-    $raw = $base.'-raw.'.$ext;
-    if (!move_uploaded_file($file['tmp_name'], $saveDir.'/'.$raw)) { error_log("uploadCover fallback move failed"); return ''; }
-    $url = $PUBLIC_BASE.'/'.$subdir.'/'.$raw;
-    $GLOBALS['__COVER_LAST_JSON__'] = ['ok'=>true,'format'=>$ext,'full'=>['url'=>$url,'type'=>"image/$ext"],'variants'=>[]];
-    return ltrim($url, '/');
+    // Fallback: copia il file così com’è (estensione decisa da MIME reale)
+    $mimeToExt = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/avif' => 'avif',
+    ];
+
+    $ext  = $mimeToExt[$mime] ?? 'webp';
+    $raw  = $base . '-raw.' . $ext;
+    $dest = $saveDir . '/' . $raw;
+
+    // Hardening: la destinazione deve essere davvero dentro $saveDir
+    if (!is_dir($saveDir)) {
+    error_log("uploadCover fallback: saveDir missing");
+    return '';
+}
+
+    $realSaveDir = realpath($saveDir);
+    $realParent  = realpath(dirname($dest));
+    if ($realSaveDir === false || $realParent === false || $realSaveDir !== $realParent) {
+        error_log("uploadCover fallback: invalid destination");
+        return '';
+    }
+
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        error_log("uploadCover fallback move failed");
+        return '';
+    }
+
+    $url = $PUBLIC_BASE . '/' . $subdir . '/' . $raw;
+   $extToMime = ['jpg'=>'image/jpeg','png'=>'image/png','webp'=>'image/webp','avif'=>'image/avif'];
+
+$GLOBALS['__COVER_LAST_JSON__'] = [
+    'ok' => true,
+    'format' => $ext,
+    'full' => ['url' => $url, 'type' => ($extToMime[$ext] ?? 'image/webp')],
+    'variants' => []
+];
+return ltrim($url, '/');
 }
 
 
@@ -1284,10 +1318,10 @@ function classStatusChip($en) {
  */
 function buildDashboardViewModel($conn): array {
   // opzionale ma utile: verifica che sia una connessione valida
-  if (!($conn instanceof mysqli) && !($conn instanceof PDO)) {
-    // qui puoi anche solo loggare e proseguire, ma un throw è più esplicito
-    throw new InvalidArgumentException('Connessione non valida: atteso mysqli o PDO.');
-  }
+if (!($conn instanceof mysqli)) {
+    throw new InvalidArgumentException('Connessione non valida: atteso mysqli.');
+}
+
 
   $stats = getDashboardStats($conn);
 
