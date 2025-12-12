@@ -1,0 +1,43 @@
+<?php
+declare(strict_types=1);
+
+header('Content-Type: application/json; charset=utf-8');
+header("Cache-Control: no-store, no-cache, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
+require_once __DIR__ . '/../assets/funzioni/authz.php';
+require_once __DIR__ . '/../assets/funzioni/db/db.php';
+
+requireLogin();
+
+/**
+ * Connessione DB sicura
+ */
+function api_db(): mysqli {
+    try {
+        return db();
+    } catch (Throwable $e) {
+        error_log("API DB error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['success'=>false,'error'=>'Errore interno']);
+        exit;
+    }
+}
+
+/**
+ * Risposta OK
+ */
+function api_ok(array $data = []): void {
+    echo json_encode(array_merge(['success'=>true], $data), JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
+ * Risposta errore
+ */
+function api_err(int $code = 400, string $msg = 'Errore'): void {
+    http_response_code($code);
+    echo json_encode(['success'=>false,'error'=>$msg], JSON_UNESCAPED_UNICODE);
+    exit;
+}
