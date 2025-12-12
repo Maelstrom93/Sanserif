@@ -5,6 +5,24 @@ header("Expires: 0");
 
 // /api/send_mail.php
 header('Content-Type: application/json; charset=utf-8');
+session_start();
+
+$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$_SESSION['mail_rl'] ??= [];
+$_SESSION['mail_rl'][$ip] ??= [];
+
+$now = time();
+// tieni solo gli ultimi 10 minuti
+$_SESSION['mail_rl'][$ip] = array_values(array_filter(
+  $_SESSION['mail_rl'][$ip],
+  fn($t) => ($now - $t) < 600
+));
+
+// max 3 invii / 10 minuti per IP
+if (count($_SESSION['mail_rl'][$ip]) >= 3) {
+  http_response_code(429);
+  echo json_encode(['ok'=>false, 'error'=>'Troppi tentativi, riprova più tardi']); exit;
+}
 
 // Solo POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -25,7 +43,18 @@ $cognome = trim(filter_input(INPUT_POST, 'cognome', FILTER_SANITIZE_FULL_SPECIAL
 $rgs     = trim(filter_input(INPUT_POST, 'rgs',     FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 $settore = trim(filter_input(INPUT_POST, 'settore', FILTER_SANITIZE_FULL_SPECIAL_CHARS));
 $email   = trim(filter_input(INPUT_POST, 'email',   FILTER_SANITIZE_EMAIL));
+// Anti header-injection: niente CR/LF in header values
+if (preg_match("/[\r\n]/", (string)$email)) {
+  http_response_code(422);
+  echo json_encode(['ok'=>false, 'error'=>'Email non valida']); exit;
+}
+
 $msg     = trim(filter_input(INPUT_POST, 'msg',     FILTER_SANITIZE_FULL_SPECIAL_CHARS));
+// Limite dimensione (evita payload enormi e problemi di deliverability)
+if (mb_strlen($msg, 'UTF-8') > 4000) {
+  http_response_code(413);
+  echo json_encode(['ok'=>false, 'error'=>'Messaggio troppo lungo']); exit;
+}
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
   http_response_code(422);
@@ -77,7 +106,10 @@ $ok = @mail($to, $subject, $body, implode("\r\n", $headers));
 
 if ($ok) {
   echo json_encode(['ok'=>true]);
+  $_SESSION['mail_rl'][$ip][] = $now;
+
 } else {
   http_response_code(500);
   echo json_encode(['ok'=>false, 'error'=>'Invio non riuscito']);
 }
+
