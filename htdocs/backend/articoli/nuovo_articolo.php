@@ -117,7 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($selCat !== '__new__') { $newCat = ''; }
 
   $catID = resolveCategoria($conn, $selCat, $newCat);
-  $cover = uploadCover($_FILES['cover'] ?? [], '../uploads/articoli');
+ $cover = uploadCover($_FILES['cover'] ?? []);
+
 
   $dati = [
     'title'        => $title,
@@ -233,3 +234,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php include __DIR__ . '/../partials/footer.php'; ?>
 </body>
 </html>
+
