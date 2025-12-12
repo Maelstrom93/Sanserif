@@ -8,12 +8,15 @@ require_once __DIR__ . '/../assets/funzioni/funzioni.php';
 // Proteggi l'endpoint (se disponibile)
 if (function_exists('requireLogin')) { requireLogin(); }
 
-if ($conn->connect_error) {
+try {
+    $conn = db();
+} catch (Throwable $e) {
+    error_log("elimina_contenuto.php DB init error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success'=>false,'error'=>'DB connection failed'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-$conn->set_charset('utf8mb4');
+
 
 $tipo  = $_POST['tipo'] ?? '';
 $id    = (int)($_POST['id'] ?? 0);
@@ -41,7 +44,14 @@ if ($tipo === 'articolo') {
     }
 
     $stmt = $conn->prepare("DELETE FROM articoli WHERE id = ?");
-    $stmt->bind_param("i", $id);
+if (!$stmt) {
+    error_log("elimina_contenuto.php prepare DELETE articolo failed: ".$conn->error);
+    http_response_code(500);
+    echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+$stmt->bind_param("i", $id);
+
     $ok = $stmt->execute();
     $stmt->close();
 
@@ -105,7 +115,9 @@ if ($tipo === 'libro') {
     } catch (Throwable $e) {
         $conn->rollback();
         http_response_code(500);
-        echo json_encode(['success'=>false,'error'=>'Eccezione: '.$e->getMessage()], JSON_UNESCAPED_UNICODE);
+      error_log("elimina_contenuto.php libro exception: ".$e->getMessage());
+echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
+
     }
     exit;
 }
@@ -134,3 +146,4 @@ if ($ok) {
 } else {
     echo json_encode(['success'=>false,'error'=>'Eliminazione cliente non riuscita'], JSON_UNESCAPED_UNICODE);
 }
+
