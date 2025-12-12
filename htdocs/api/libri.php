@@ -25,6 +25,7 @@ if (!$stmt) {
     throw new RuntimeException("Prepare failed: " . $conn->error);
 }
 
+    
 // DB_NAME ora esiste (Patch 1), ma metto anche un fallback safe
 $dbName = defined('DB_NAME') ? DB_NAME : '';
 if ($dbName === '') {
@@ -92,11 +93,14 @@ while ($row = $result->fetch_assoc()) {
 echo json_encode($libri, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 } catch (Throwable $e) {
-    // In caso di errore DB, restituisco 500 + info (per debug)
+    // Log completo lato server, risposta generica lato client
+    error_log("api/libri.php DB_ERROR: " . $e->getMessage());
+
     http_response_code(500);
     echo json_encode([
-        "error"   => "DB_ERROR",
-        "message" => $e->getMessage()
+        "error" => "DB_ERROR",
+        "message" => "Errore interno"
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
