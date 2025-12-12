@@ -21,7 +21,7 @@ try {
         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'libri' AND COLUMN_NAME = 'casa_editrice'
     ";
     $stmt = $conn->prepare($sqlCheckCol);
-    $dbName = DB_NAME; // costante definita in db.php
+   $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? '';
     $stmt->bind_param('s', $dbName);
     $stmt->execute();
     $hasCol = 0;
