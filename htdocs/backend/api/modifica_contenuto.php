@@ -11,15 +11,16 @@ if (!(currentUserCan('users.manage') || currentUserCan('portfolio.edit'))) {
   exit(json_encode(['success'=>false,'error'=>'Forbidden']));
 }
 
-// (Opzionale ma consigliato): proteggi l'endpoint AJAX
-if (function_exists('requireLogin')) { requireLogin(); }
 
-if ($conn->connect_error) {
+try {
+    $conn = db(); // usa accessor idempotente
+} catch (Throwable $e) {
+    error_log("modifica_contenuto.php DB init error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success'=>false,'error'=>'DB connection failed'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
     exit;
 }
-$conn->set_charset('utf8mb4');
+
 
 /* ========== Input base ========== */
 $tipo  = $_POST['tipo'] ?? '';
@@ -68,8 +69,17 @@ if ($tipo === 'articolo') {
     $types .= "i";
     $params[] = $id;
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$params);
+  $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    error_log("modifica_contenuto.php prepare articolo failed: ".$conn->error);
+    http_response_code(500);
+error_log("modifica_contenuto.php libro exception: ".$e->getMessage());
+echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
+
+    exit;
+}
+$stmt->bind_param($types, ...$params);
+
     $ok = $stmt->execute();
     $stmt->close();
 
@@ -226,3 +236,4 @@ if ($ok) {
 }
 
 echo json_encode(['success'=>$ok], JSON_UNESCAPED_UNICODE);
+
