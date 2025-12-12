@@ -20,8 +20,18 @@ try {
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'libri' AND COLUMN_NAME = 'casa_editrice'
     ";
-    $stmt = $conn->prepare($sqlCheckCol);
-   $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? '';
+ $stmt = $conn->prepare($sqlCheckCol);
+if (!$stmt) {
+    throw new RuntimeException("Prepare failed: " . $conn->error);
+}
+
+// DB_NAME ora esiste (Patch 1), ma metto anche un fallback safe
+$dbName = defined('DB_NAME') ? DB_NAME : '';
+if ($dbName === '') {
+    $resDb = $conn->query("SELECT DATABASE() AS db");
+    $dbName = $resDb ? ($resDb->fetch_assoc()['db'] ?? '') : '';
+}
+
     $stmt->bind_param('s', $dbName);
     $stmt->execute();
     $hasCol = 0;
