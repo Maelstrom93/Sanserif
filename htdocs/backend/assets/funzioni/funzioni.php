@@ -1,11 +1,7 @@
 <?php
 declare(strict_types=1);
-
-/**
- * =========================================================
- * Helpers di base (escape / json / data) + Auth
- * =========================================================
- */
+const MIME_AVIF = 'image/avif';
+const MIME_WEBP = 'image/webp';
 
 /** Escape HTML sicuro e compatto */
 function h(?string $s): string {
@@ -921,6 +917,7 @@ function resolveCategoria(mysqli $conn, string $selectedId, string $newName): in
     return (int)$selectedId;
 }
 
+
 function uploadCover(array $file): string {
     // CONFIG
     $BASE_DIR   = __DIR__ . '/../../uploads/covers';
@@ -938,7 +935,7 @@ function uploadCover(array $file): string {
 
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime  = (string)($finfo->file($file['tmp_name']) ?: '');
-    $allowed = ['image/jpeg','image/png','image/webp','image/avif'];
+$allowed = ['image/jpeg','image/png', MIME_WEBP, MIME_AVIF];
     if (!in_array($mime, $allowed, true)) { error_log("uploadCover: mime non supportato: $mime"); return ''; }
 
     $subdir  = date('Y/m');
@@ -947,7 +944,7 @@ function uploadCover(array $file): string {
 
     $preferAvif = (class_exists('Imagick') && in_array('AVIF', \Imagick::queryFormats('AVIF') ?: [], true));
     $fmtExt     = $preferAvif ? 'avif' : 'webp';
-    $fmtMime    = $preferAvif ? 'image/avif' : 'image/webp';
+$fmtMime = $preferAvif ? MIME_AVIF : MIME_WEBP;
 
     $base = bin2hex(random_bytes(8));
     $variants = [];
@@ -1013,14 +1010,16 @@ $GLOBALS['__COVER_LAST_JSON__'] = [
     }
 
     // Fallback: copia il file così com’è (estensione decisa da MIME reale)
-    $mimeToExt = [
-        'image/jpeg' => 'jpg',
-        'image/png'  => 'png',
-        'image/webp' => 'webp',
-        'image/avif' => 'avif',
-    ];
+   switch ($mime) {
+    case 'image/jpeg': $ext = 'jpg';  break;
+    case 'image/png':  $ext = 'png';  break;
+    case MIME_AVIF:    $ext = 'avif'; break;
+    case MIME_WEBP:    $ext = 'webp'; break;
+    default:
+        error_log("uploadCover fallback: mime non valido $mime");
+        return '';
+}
 
-    $ext  = $mimeToExt[$mime] ?? 'webp';
     $raw  = $base . '-raw.' . $ext;
     $dest = $saveDir . '/' . $raw;
 
@@ -1043,12 +1042,12 @@ $GLOBALS['__COVER_LAST_JSON__'] = [
     }
 
     $url = $PUBLIC_BASE . '/' . $subdir . '/' . $raw;
-   $extToMime = ['jpg'=>'image/jpeg','png'=>'image/png','webp'=>'image/webp','avif'=>'image/avif'];
+$extToMime = ['jpg'=>'image/jpeg','png'=>'image/png','webp'=>MIME_WEBP,'avif'=>MIME_AVIF];
 
 $GLOBALS['__COVER_LAST_JSON__'] = [
     'ok' => true,
     'format' => $ext,
-    'full' => ['url' => $url, 'type' => ($extToMime[$ext] ?? 'image/webp')],
+'full' => ['url' => $url, 'type' => ($extToMime[$ext] ?? MIME_WEBP)],
     'variants' => []
 ];
 return ltrim($url, '/');
