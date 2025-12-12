@@ -63,7 +63,9 @@ ORDER BY MAX(l.aggiunto_il) DESC, l.id DESC
 ";
 
     $result = $conn->query($sql);
-
+if (!$result) {
+    throw new RuntimeException("Query failed: " . $conn->error);
+}
    $libri = [];
 while ($row = $result->fetch_assoc()) {
     $cover = null;
