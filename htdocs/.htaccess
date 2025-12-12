@@ -1,0 +1,39 @@
+# --- Error pages (solo se il file esiste) ---
+# ErrorDocument 403 /403.html
+
+RewriteEngine On
+
+# 🔒 1) Forza HTTPS (anche dietro proxy/CDN)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# 🌐 2) Forza WWW come dominio canonico
+RewriteCond %{HTTP_HOST} !^www\.sansserifspazioeditoriale\.it$ [NC]
+RewriteRule ^ https://www.sansserifspazioeditoriale.it%{REQUEST_URI} [R=301,L]
+
+# 3) Non riscrivere file/cartelle reali
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 4) /index.php -> /
+RewriteCond %{THE_REQUEST} \s/+(index)\.php[\s?/] [NC]
+RewriteRule ^index\.php$ / [R=301,L]
+
+# 5) URL senza estensione -> file .php (rewrite interno)
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ $1.php [L]
+
+# 6) (opzionale) /index -> /
+RewriteRule ^index/?$ / [R=301,L]
+
+# Charset di default
+AddDefaultCharset UTF-8
+
+# --- RIMUOVI queste direttive se usavi FPM ---
+# AddHandler php8.4-script .php
+# <IfModule mod_headers.c>
+#   Header set Content-Type "text/html; charset=UTF-8" env=REDIRECT_STATUS
+# </IfModule>
+# php_value default_charset "UTF-8"
