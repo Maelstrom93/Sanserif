@@ -19,19 +19,28 @@ Il progetto è pensato per essere deployato su hosting tradizionale (Apache + PH
 ## 📁 Struttura del progetto
 
 htdocs/
+
 ├── index.php
+
 ├── contatti.php
+
 ├── backend/
+
 │ ├── email/
+
 │ ├── lavori/
+
 │ ├── preventivi/
+
 │ └── uploads/
+
 ├── assets/
+
 │ ├── css/
+
 │ ├── js/
+
 │ └── images/
 
-yaml
-Copia codice
-
 ---
+
