@@ -11,11 +11,16 @@ $DB_USER = $_ENV['DB_USER'] ?? getenv('DB_USER') ?? 'root';
 $DB_PASS = $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?? '';
 $DB_NAME = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? '';
 
-$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
-if ($conn->connect_error) {
-    die("Errore connessione DB: " . $conn->connect_error);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+try {
+    $conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+    $conn->set_charset('utf8mb4');
+} catch (mysqli_sql_exception $e) {
+    // Non fermare tutto con die(): lancia eccezione gestibile dagli endpoint
+    throw new RuntimeException("Errore connessione DB", 0, $e);
 }
-$conn->set_charset('utf8mb4');
+
 
 /**
  * Accessor idempotente alla connessione
