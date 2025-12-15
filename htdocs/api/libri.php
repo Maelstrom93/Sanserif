@@ -7,7 +7,9 @@ header("Expires: 0");
 header('Content-Type: application/json; charset=utf-8');
 
 // includo il file di connessione globale
+require_once __DIR__ . '/../backend/api/Exceptions.php';
 require_once __DIR__ . '/../backend/assets/funzioni/db/db.php';
+const ERR_INTERNAL = 'Errore interno';
 
 try {
     // usa la funzione helper definita in db.php
@@ -22,7 +24,7 @@ try {
     ";
  $stmt = $conn->prepare($sqlCheckCol);
 if (!$stmt) {
-    throw new RuntimeException("Prepare failed: " . $conn->error);
+    throw new DbException("Prepare failed: " . $conn->error);
 }
 
     
@@ -65,7 +67,7 @@ ORDER BY MAX(l.aggiunto_il) DESC, l.id DESC
 
     $result = $conn->query($sql);
 if (!$result) {
-    throw new RuntimeException("Query failed: " . $conn->error);
+    throw new DbException("Query failed: " . $conn->error);
 }
    $libri = [];
 while ($row = $result->fetch_assoc()) {
@@ -99,7 +101,7 @@ echo json_encode($libri, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     http_response_code(500);
     echo json_encode([
         "error" => "DB_ERROR",
-        "message" => "Errore interno"
+      "message" => ERR_INTERNAL
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
