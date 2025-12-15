@@ -11,6 +11,24 @@ function getTip(){
   }
   return __chartTipEl;
 }
+function safeJsonParse(text, fallback) {
+  try { return JSON.parse(text); }
+  catch (e) {
+    console.warn('JSON parse error:', e);
+    return fallback;
+  }
+}
+function sortKeys(obj) {
+  return Object.keys(obj || {}).sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+}
+
+function mapDayKeys(raw) {
+  const mapped = {};
+  sortKeys(raw).forEach(k => { mapped[k.slice(8,10)] = parseInt(raw[k] || 0, 10); });
+  return mapped;
+}
+
+
 function showTip(html, x, y){
   const tip = getTip();
   tip.innerHTML = html;
@@ -109,7 +127,7 @@ function bindCanvasInteractions(canvas){
 
 // Canvas responsive
 function autosizeCanvas(canvas){
- const ratio = parseFloat(canvas.dataset.aspect || '0.4');
+ const ratio = Number.parseFloat(canvas.dataset.aspect || '0.4');
   const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const cssW = canvas.parentElement.clientWidth || 600;
   const cssH = Math.max(160, Math.round(cssW * ratio));
@@ -249,8 +267,8 @@ function renderDesktopCharts(){
   // Libri 12M (bar)
   const cL = document.getElementById('chartLibri12M');
   if (cL) {
-    let series = {};
- try { series = JSON.parse(cL.dataset.series || '{}'); } catch(e){}
+ const series = safeJsonParse(cL.dataset.series || '{}', {});
+
 
     drawBars(cL, series, { totalLabel:'Totale 12 mesi', shortLabel:true });
   }
@@ -258,9 +276,9 @@ function renderDesktopCharts(){
   // Storico top categorie (multi-line)
   const cT = document.getElementById('chartTopCat');
   if (cT) {
-    let labels = [], series = [];
-try { labels = JSON.parse(cT.dataset.labels || '[]'); } catch(e){}
-try { series = JSON.parse(cT.dataset.series || '[]'); } catch(e){}
+const labels = safeJsonParse(cT.dataset.labels || '[]', []);
+const series = safeJsonParse(cT.dataset.series || '[]', []);
+
 
     if (labels.length && series.length) drawMultiLine(cT, labels, series);
   }
@@ -268,37 +286,40 @@ try { series = JSON.parse(cT.dataset.series || '[]'); } catch(e){}
   // Richieste per giorno (mese) - bar
   const cR = document.getElementById('chartRichiesteMese');
   if (cR) {
-    let raw = {};
-   try { raw = JSON.parse(cR.dataset.series || '{}'); } catch(e){}
-   const keys = Object.keys(raw || {}).sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
-    const mapped = {};
-    keys.forEach(k => { mapped[k.slice(8,10)] = parseInt(raw[k]||0,10); });
-    drawBars(cR, mapped, { totalLabel:'Totale mese' });
+    const raw = safeJsonParse(cR.dataset.series || '{}', {});
+drawBars(cR, mapDayKeys(raw), { totalLabel:'Totale mese' });
+
   }
 }
 
 function renderChartIfNeeded(canvasId, type){
   const el = document.getElementById(canvasId);
   if (!el || el.dataset.rendered === '1') return;
-  if (type === 'richieste_sm') {
-    let series = {};
-  try { series = JSON.parse(el.dataset.series || '{}'); } catch(e){}
-   const keys = Object.keys(series || {}).sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
-    const mapped = {};
-    keys.forEach(k => { mapped[k.slice(8,10)] = parseInt(series[k]||0,10); });
-    drawBars(el, mapped, { totalLabel:'Totale' });
-  } else if (type === 'libri12m_sm') {
-    let series = {};
-   try { series = JSON.parse(el.dataset.series || '{}'); } catch(e){}
-    drawBars(el, series, { totalLabel:'Totale 12 mesi', shortLabel:true });
-  } else if (type === 'topcat_sm') {
-    let labels = [], series = [];
-   try { labels = JSON.parse(el.dataset.labels || '[]'); } catch(e){}
-try { series = JSON.parse(el.dataset.series || '[]'); } catch(e){}
-    if (labels.length && series.length) drawMultiLine(el, labels, series);
+
+  switch (type) {
+    case 'richieste_sm': {
+      const series = safeJsonParse(el.dataset.series || '{}', {});
+      drawBars(el, mapDayKeys(series), { totalLabel:'Totale' });
+      break;
+    }
+    case 'libri12m_sm': {
+      const series = safeJsonParse(el.dataset.series || '{}', {});
+      drawBars(el, series, { totalLabel:'Totale 12 mesi', shortLabel:true });
+      break;
+    }
+    case 'topcat_sm': {
+      const labels = safeJsonParse(el.dataset.labels || '[]', []);
+      const series = safeJsonParse(el.dataset.series || '[]', []);
+      if (labels.length && series.length) drawMultiLine(el, labels, series);
+      break;
+    }
+    default:
+      break;
   }
+
   el.dataset.rendered = '1';
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
   // Calendario (se presente)
@@ -306,8 +327,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctrlsEl = document.getElementById('calMobileCtrls');
 
   if (calendarEl && window.FullCalendar) {
-    let eventi = [];
-  try { eventi = JSON.parse(calendarEl.dataset.eventi || '[]'); } catch(e){}
+const eventi = safeJsonParse(calendarEl.dataset.eventi || '[]', []);
+
 
     const isSmall = () => window.matchMedia('(max-width: 720px)').matches;
 
@@ -399,14 +420,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (document.querySelector('[data-acc="acc-topcat-storico"].acc-open'))  renderChartIfNeeded('chartTopCat_sm','topcat_sm');
     }, 120);
   }, {passive:true});
-  if (calendarEl) {
-    let eventi = [];
-    try { eventi = JSON.parse(calendarEl.dataset.eventi || '[]'); } catch(e){
-      console.warn('Calendar: JSON parse error for data-eventi', e);
-    }
+   if (calendarEl) {
+    const eventi = safeJsonParse(calendarEl.dataset.eventi || '[]', []);
     console.log('Calendar: eventi caricati =', Array.isArray(eventi) ? eventi.length : 'N/A');
   }
 });
+
 
 
 /* ====== Orizzontal bars per “Lavori per categoria” ====== */
@@ -414,8 +433,8 @@ document.addEventListener('DOMContentLoaded', () => {
   var canvas = document.getElementById('chartLavoriCat');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  var series = {};
-try { series = JSON.parse(canvas.dataset.series || '{}'); } catch(e){ series = {}; }
+var series = safeJsonParse(canvas.dataset.series || '{}', {});
+
 
 
   var labels = Object.keys(series);
