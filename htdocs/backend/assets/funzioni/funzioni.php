@@ -2,6 +2,8 @@
 declare(strict_types=1);
 const MIME_AVIF = 'image/avif';
 const MIME_WEBP = 'image/webp';
+const MIME_JPEG = 'image/jpeg';
+const MIME_PNG  = 'image/png';
 
 /** Escape HTML sicuro e compatto */
 function h(?string $s): string {
@@ -935,7 +937,7 @@ function uploadCover(array $file): string {
 
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime  = (string)($finfo->file($file['tmp_name']) ?: '');
-$allowed = ['image/jpeg','image/png', MIME_WEBP, MIME_AVIF];
+$allowed = [MIME_JPEG ,MIME_PNG, MIME_WEBP, MIME_AVIF];
     if (!in_array($mime, $allowed, true)) { error_log("uploadCover: mime non supportato: $mime"); return ''; }
 
     $subdir  = date('Y/m');
@@ -1011,8 +1013,8 @@ $GLOBALS['__COVER_LAST_JSON__'] = [
 
     // Fallback: copia il file così com’è (estensione decisa da MIME reale)
    switch ($mime) {
-    case 'image/jpeg': $ext = 'jpg';  break;
-    case 'image/png':  $ext = 'png';  break;
+    case MIME_JPEG: $ext = 'jpg';  break;
+    case MIME_PNG:  $ext = 'png';  break;
     case MIME_AVIF:    $ext = 'avif'; break;
     case MIME_WEBP:    $ext = 'webp'; break;
     default:
@@ -1042,7 +1044,7 @@ $GLOBALS['__COVER_LAST_JSON__'] = [
     }
 
     $url = $PUBLIC_BASE . '/' . $subdir . '/' . $raw;
-$extToMime = ['jpg'=>'image/jpeg','png'=>'image/png','webp'=>MIME_WEBP,'avif'=>MIME_AVIF];
+$extToMime = ['jpg'=>MIME_JPEG,'png'=>MIME_PNG,'webp'=>MIME_WEBP,'avif'=>MIME_AVIF];
 
 $GLOBALS['__COVER_LAST_JSON__'] = [
     'ok' => true,
