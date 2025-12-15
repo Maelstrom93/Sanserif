@@ -4,6 +4,7 @@ session_start();
 
 require_once __DIR__ . '/../assets/funzioni/db/db.php';
 require_once __DIR__ . '/../assets/funzioni/funzioni.php';
+require_once __DIR__ . '/../api/exceptions.php';
 
 requireLogin();
 if (!isAdmin()) {
@@ -32,30 +33,45 @@ if (!function_exists('e')) {
    Funzioni DB: categorie
 ----------------------------*/
 
-function getCategorieLibri(mysqli $conn){
+function getCategorieLibri(mysqli $conn): array {
   $out = [];
   $rs = $conn->query("SELECT id, nome FROM categorie_libri ORDER BY nome ASC");
-  if ($rs) while($r=$rs->fetch_assoc()) $out[]=$r;
+  if ($rs) {
+    while ($r = $rs->fetch_assoc()) {
+      $out[] = $r;
+    }
+  }
   return $out;
 }
-function getCategorieLavoro(mysqli $conn){
+
+function getCategorieLavoro(mysqli $conn): array {
   $out = [];
   $rs = $conn->query("SELECT id, nome, created_at FROM categorie_lavoro ORDER BY nome ASC");
-  if ($rs) while($r=$rs->fetch_assoc()) $out[]=$r;
+  if ($rs) {
+    while ($r = $rs->fetch_assoc()) {
+      $out[] = $r;
+    }
+  }
   return $out;
 }
 
-function nomeEsiste(mysqli $conn, string $tabella, string $nome, int $excludeId=0){
+function nomeEsiste(mysqli $conn, string $tabella, string $nome, int $excludeId = 0): bool {
   $sql = "SELECT id FROM {$tabella} WHERE nome = ? AND id <> ?";
   $stmt = $conn->prepare($sql);
+  if (!$stmt) {
+    return false;
+  }
   $stmt->bind_param("si", $nome, $excludeId);
   $stmt->execute();
-  return (bool)$stmt->get_result()->fetch_assoc();
+  return (bool) $stmt->get_result()->fetch_assoc();
 }
 
-function getNomeById(mysqli $conn, string $tabella, int $id){
+function getNomeById(mysqli $conn, string $tabella, int $id): ?string {
   $sql = "SELECT nome FROM {$tabella} WHERE id = ?";
   $stmt = $conn->prepare($sql);
+  if (!$stmt) {
+    return null;
+  }
   $stmt->bind_param("i", $id);
   $stmt->execute();
   $res = $stmt->get_result()->fetch_assoc();
@@ -63,55 +79,71 @@ function getNomeById(mysqli $conn, string $tabella, int $id){
 }
 
 /* ---- conteggi d’uso per bloccare eliminazioni ---- */
-function countUsoCategoriaArticoli(mysqli $conn, int $id){
-  // articoli.categoria è il NOME, quindi mappo id->nome e conto
+function countUsoCategoriaArticoli(mysqli $conn, int $id): int {
   $nome = getNomeById($conn, 'categorie_articoli', $id);
-  if ($nome === null) return 0;
+  if ($nome === null) {
+    return 0;
+  }
   $stmt = $conn->prepare("SELECT COUNT(*) c FROM articoli WHERE categoria = ?");
+  if (!$stmt) {
+    return 0;
+  }
   $stmt->bind_param("s", $nome);
   $stmt->execute();
-  return (int)$stmt->get_result()->fetch_assoc()['c'];
+  return (int) ($stmt->get_result()->fetch_assoc()['c'] ?? 0);
 }
-function countUsoCategoriaLibri(mysqli $conn, int $id){
-  // in libri_categorie (principale)
+
+function countUsoCategoriaLibri(mysqli $conn, int $id): int {
   $tot = 0;
-  foreach ([
+  $sqls = [
     "SELECT COUNT(*) c FROM libri_categorie WHERE categoria_id = ?",
     "SELECT COUNT(*) c FROM lavori_categorie WHERE categoria_id = ?",
-    "SELECT COUNT(*) c FROM lavori_attivita WHERE categoria_id = ?"
-  ] as $sql){
+    "SELECT COUNT(*) c FROM lavori_attivita WHERE categoria_id = ?",
+  ];
+
+  foreach ($sqls as $sql) {
     $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      continue;
+    }
     $stmt->bind_param("i", $id);
     $stmt->execute();
-    $tot += (int)$stmt->get_result()->fetch_assoc()['c'];
+    $tot += (int) ($stmt->get_result()->fetch_assoc()['c'] ?? 0);
   }
+
   return $tot;
 }
-function countUsoCategoriaLavoro(mysqli $conn, int $id){
-  // nel caso in cui in futuro venisse referenziata
+
+function countUsoCategoriaLavoro(mysqli $conn, int $id): int {
   $tot = 0;
-  foreach ([
+  $sqls = [
     "SELECT COUNT(*) c FROM lavori_categorie WHERE categoria_id = ?",
     "SELECT COUNT(*) c FROM lavori_attivita WHERE categoria_id = ?",
-  ] as $sql){
-    if (!$conn->query("SELECT 1")) {} // placeholder
+  ];
+
+  foreach ($sqls as $sql) {
     $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+      continue;
+    }
     $stmt->bind_param("i", $id);
     $stmt->execute();
-    $tot += (int)$stmt->get_result()->fetch_assoc()['c'];
+    $tot += (int) ($stmt->get_result()->fetch_assoc()['c'] ?? 0);
   }
+
   return $tot;
 }
 
 /* ---------------------------
    AJAX: Crea/Aggiorna/Elimina
 ----------------------------*/
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
   header('Content-Type: application/json; charset=utf-8');
   try{
     $entity = $_POST['entity'] ?? '';
     if (!in_array($entity, ['articoli','libri','lavoro'], true)) {
-      throw new Exception('Tipo non valido.');
+     throw new BadRequestException('Tipo non valido.');
     }
 
     $tabella = [
@@ -124,23 +156,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
 
     if ($action === 'delete') {
       $id = (int)($_POST['id'] ?? 0);
-      if ($id <= 0) throw new Exception('ID mancante.');
+      if ($id <= 0) throw new ValidationException('ID mancante.');
 
       // Blocchi d’uso
       if ($entity === 'articoli' && countUsoCategoriaArticoli($conn, $id) > 0) {
-        throw new Exception('Impossibile eliminare: categoria usata da almeno un articolo.');
+       throw new OperationFailedException('Impossibile eliminare: categoria usata da almeno un articolo.');
       }
       if ($entity === 'libri' && countUsoCategoriaLibri($conn, $id) > 0) {
-        throw new Exception('Impossibile eliminare: categoria in uso (libri o lavori).');
+       throw new OperationFailedException('Impossibile eliminare: categoria in uso (libri o lavori).');
       }
       if ($entity === 'lavoro' && countUsoCategoriaLavoro($conn, $id) > 0) {
-        throw new Exception('Impossibile eliminare: categoria in uso su lavori/attività.');
+       throw new OperationFailedException('Impossibile eliminare: categoria in uso su lavori/attività.');
       }
 
       $stmt = $conn->prepare("DELETE FROM {$tabella} WHERE id = ?");
       $stmt->bind_param("i", $id);
       $ok = $stmt->execute();
-      if (!$ok) throw new Exception('Eliminazione non riuscita.');
+      if (!$ok)throw new OperationFailedException('Eliminazione non riuscita.');
 
       echo json_encode(['success'=>true, 'msg'=>'Categoria eliminata']);
       exit;
@@ -149,11 +181,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     // Save (create/update)
     $id   = (int)($_POST['id'] ?? 0);
     $nome = trim((string)($_POST['nome'] ?? ''));
-    if ($nome === '') throw new Exception('Il nome è obbligatorio.');
-    if (mb_strlen($nome) > 191) throw new Exception('Nome troppo lungo.');
+    if ($nome === '')throw new OperationFailedException('Il nome è obbligatorio.');
+    if (mb_strlen($nome) > 191)throw new OperationFailedException('Nome troppo lungo.');
 
     if (nomeEsiste($conn, $tabella, $nome, $id)) {
-      throw new Exception('Esiste già una categoria con questo nome.');
+     throw new ConflictException('Esiste già una categoria con questo nome.');
     }
 
     if ($id > 0) {
@@ -161,7 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
       if ($entity === 'articoli') {
         // prendo il vecchio nome (per propagare sugli articoli)
         $old = getNomeById($conn, $tabella, $id);
-        if ($old === null) throw new Exception('Categoria non trovata.');
+        if ($old === null) throw new NotFoundException('Categoria non trovata.');
 
         $stmt = $conn->prepare("UPDATE {$tabella} SET nome = ? WHERE id = ?");
         $stmt->bind_param("si", $nome, $id);
@@ -186,23 +218,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     } else {
       // create
       if ($entity === 'lavoro') {
-        $stmt = $conn->prepare("INSERT INTO {$tabella} (nome) VALUES (?)");
-        $stmt->bind_param("s", $nome);
-      } else {
-        $stmt = $conn->prepare("INSERT INTO {$tabella} (nome) VALUES (?)");
-        $stmt->bind_param("s", $nome);
+      // create
+$stmt = $conn->prepare("INSERT INTO {$tabella} (nome) VALUES (?)");
+if (!$stmt) {
+  throw new OperationFailedException('Creazione non riuscita.');
+}
+$stmt->bind_param("s", $nome);
+$ok = $stmt->execute();
+if (!$ok) {
+  throw new OperationFailedException('Creazione non riuscita.');
+}
+echo json_encode(['success'=>true, 'msg'=>'Categoria creata']);
+exit;
       }
-      $ok = $stmt->execute();
-      if (!$ok) throw new Exception('Creazione non riuscita.');
-      echo json_encode(['success'=>true, 'msg'=>'Categoria creata']);
-      exit;
-    }
 
-  } catch (Throwable $e) {
-    http_response_code(400);
-    echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
-    exit;
-  }
+} catch (ValidationException|BadRequestException $e) {
+  http_response_code(400);
+  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+  exit;
+} catch (NotFoundException $e) {
+  http_response_code(404);
+  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+  exit;
+} catch (ConflictException $e) {
+  http_response_code(409);
+  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+  exit;
+} catch (OperationFailedException $e) {
+  http_response_code(500);
+  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+  exit;
+} catch (Throwable $e) {
+  http_response_code(500);
+  echo json_encode(['success'=>false, 'msg'=>'Errore inatteso']);
+  exit;
+}
+
 }
 
 /* ---------------------------
@@ -415,10 +466,10 @@ $catLavoro   = getCategorieLavoro($conn);
     </div>
   </section>
 </main>
+<?php include_once __DIR__ . '/../partials/footer.php'; ?>
 
-<?php include __DIR__ . '/../partials/footer.php'; ?>
+<output id="toast" class="toast" aria-live="polite"></output>
 
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
   const toast = document.getElementById('toast');
@@ -523,3 +574,4 @@ $catLavoro   = getCategorieLavoro($conn);
 </script>
 </body>
 </html>
+
