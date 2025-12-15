@@ -18,7 +18,8 @@ try {
     $conn->set_charset('utf8mb4');
 } catch (mysqli_sql_exception $e) {
     // Non fermare tutto con die(): lancia eccezione gestibile dagli endpoint
-    throw new RuntimeException("Errore connessione DB", 0, $e);
+throw new DbException("Errore connessione DB", 0, $e);
+
 }
 
 
@@ -31,5 +32,6 @@ function db(): mysqli {
     global $conn;
     if ($conn instanceof mysqli) { $c = $conn; return $c; }
 
-    throw new RuntimeException('Connessione DB non disponibile');
+   throw new DbException("Errore connessione DB", 0, $e);
+
 }
