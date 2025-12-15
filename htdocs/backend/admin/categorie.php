@@ -5,6 +5,9 @@ session_start();
 require_once __DIR__ . '/../assets/funzioni/db/db.php';
 require_once __DIR__ . '/../assets/funzioni/funzioni.php';
 require_once __DIR__ . '/../api/exceptions.php';
+const ERR_UPDATE = 'Aggiornamento non riuscito.';
+const ERR_DELETE = 'Eliminazione non riuscita.';
+const ERR_CREATE = 'Creazione non riuscita.';
 
 requireLogin();
 if (!isAdmin()) {
@@ -157,7 +160,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     // DELETE
     if ($action === 'delete') {
       $id = (int)($_POST['id'] ?? 0);
-      if ($id <= 0) throw new ValidationException('ID mancante.');
+      if ($id <= 0) {
+        throw new ValidationException('ID mancante.');
+      }
 
       if ($entity === 'articoli' && countUsoCategoriaArticoli($conn, $id) > 0) {
         throw new OperationFailedException('Impossibile eliminare: categoria usata da almeno un articolo.');
@@ -170,10 +175,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
       }
 
       $stmt = $conn->prepare("DELETE FROM {$tabella} WHERE id = ?");
-      if (!$stmt) throw new OperationFailedException('Eliminazione non riuscita.');
+      if (!$stmt) {
+        throw new OperationFailedException(ERR_DELETE);
+      }
       $stmt->bind_param("i", $id);
 
-      if (!$stmt->execute()) throw new OperationFailedException('Eliminazione non riuscita.');
+      if (!$stmt->execute()) {
+        throw new OperationFailedException(ERR_DELETE);
+      }
 
       echo json_encode(['success'=>true, 'msg'=>'Categoria eliminata']);
       exit;
@@ -182,8 +191,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     // SAVE (create/update)
     $id   = (int)($_POST['id'] ?? 0);
     $nome = trim((string)($_POST['nome'] ?? ''));
-    if ($nome === '') throw new OperationFailedException('Il nome è obbligatorio.');
-    if (mb_strlen($nome) > 191) throw new OperationFailedException('Nome troppo lungo.');
+
+    if ($nome === '') {
+      throw new OperationFailedException('Il nome è obbligatorio.');
+    }
+    if (mb_strlen($nome) > 191) {
+      throw new OperationFailedException('Nome troppo lungo.');
+    }
 
     if (nomeEsiste($conn, $tabella, $nome, $id)) {
       throw new ConflictException('Esiste già una categoria con questo nome.');
@@ -193,12 +207,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     if ($id > 0) {
       if ($entity === 'articoli') {
         $old = getNomeById($conn, $tabella, $id);
-        if ($old === null) throw new NotFoundException('Categoria non trovata.');
+        if ($old === null) {
+          throw new NotFoundException('Categoria non trovata.');
+        }
 
         $stmt = $conn->prepare("UPDATE {$tabella} SET nome = ? WHERE id = ?");
-        if (!$stmt) throw new OperationFailedException('Aggiornamento non riuscito.');
+        if (!$stmt) {
+          throw new OperationFailedException(ERR_UPDATE);
+        }
         $stmt->bind_param("si", $nome, $id);
-        if (!$stmt->execute()) throw new OperationFailedException('Aggiornamento non riuscito.');
+
+        if (!$stmt->execute()) {
+          throw new OperationFailedException(ERR_UPDATE);
+        }
 
         if ($old !== $nome) {
           $stmt2 = $conn->prepare("UPDATE articoli SET categoria = ? WHERE categoria = ?");
@@ -209,9 +230,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
         }
       } else {
         $stmt = $conn->prepare("UPDATE {$tabella} SET nome = ? WHERE id = ?");
-        if (!$stmt) throw new OperationFailedException('Aggiornamento non riuscito.');
+        if (!$stmt) {
+          throw new OperationFailedException(ERR_UPDATE);
+        }
         $stmt->bind_param("si", $nome, $id);
-        if (!$stmt->execute()) throw new OperationFailedException('Aggiornamento non riuscito.');
+
+        if (!$stmt->execute()) {
+          throw new OperationFailedException(ERR_UPDATE);
+        }
       }
 
       echo json_encode(['success'=>true, 'msg'=>'Categoria aggiornata']);
@@ -220,9 +246,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
 
     // CREATE
     $stmt = $conn->prepare("INSERT INTO {$tabella} (nome) VALUES (?)");
-    if (!$stmt) throw new OperationFailedException('Creazione non riuscita.');
+    if (!$stmt) {
+      throw new OperationFailedException(ERR_CREATE);
+    }
     $stmt->bind_param("s", $nome);
-    if (!$stmt->execute()) throw new OperationFailedException('Creazione non riuscita.');
+
+    if (!$stmt->execute()) {
+      throw new OperationFailedException(ERR_CREATE);
+    }
 
     echo json_encode(['success'=>true, 'msg'=>'Categoria creata']);
     exit;
@@ -249,6 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
     exit;
   }
 }
+
 
 
 
@@ -572,5 +604,6 @@ $catLavoro   = getCategorieLavoro($conn);
 </script>
 </body>
 </html>
+
 
 
