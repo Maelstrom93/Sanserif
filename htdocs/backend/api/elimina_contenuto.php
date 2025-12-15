@@ -4,6 +4,7 @@ header('Content-Type: application/json; charset=utf-8');
 session_start();
 require_once __DIR__ . '/../assets/funzioni/db/db.php';
 require_once __DIR__ . '/../assets/funzioni/funzioni.php';
+const ERR_INTERNAL = 'Errore interno';
 
 // Proteggi l'endpoint (se disponibile)
 if (function_exists('requireLogin')) { requireLogin(); }
@@ -13,7 +14,7 @@ try {
 } catch (Throwable $e) {
     error_log("elimina_contenuto.php DB init error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
+  echo json_encode(['success'=>false,'error'=>ERR_INTERNAL], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -47,7 +48,7 @@ if ($tipo === 'articolo') {
 if (!$stmt) {
     error_log("elimina_contenuto.php prepare DELETE articolo failed: ".$conn->error);
     http_response_code(500);
-    echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
+  echo json_encode(['success'=>false,'error'=>ERR_INTERNAL], JSON_UNESCAPED_UNICODE);
     exit;
 }
 $stmt->bind_param("i", $id);
