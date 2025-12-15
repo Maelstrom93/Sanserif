@@ -26,35 +26,54 @@ function bindCanvasInteractions(canvas){
   if (canvas.__tipBound) return;
   canvas.__tipBound = true;
 
-  const pickHit = (clientX, clientY) => {
+   const getRelXY = (clientX, clientY) => {
     const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const hitTestBar = (x, y, hits) => {
+    for (const h of hits) {
+      if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) return h;
+    }
+    return null;
+  };
+
+  const nearestBar = (x, hits) => {
+    if (!hits.length) return null;
+    let best = hits[0];
+    let minDx = Infinity;
+    for (const h of hits) {
+      const cx = h.x + h.w / 2;
+      const dx = Math.abs(x - cx);
+      if (dx < minDx) { minDx = dx; best = h; }
+    }
+    return best;
+  };
+
+  const nearestPoint = (x, y, hits, maxDist = 24) => {
     let best = null;
+    let minD2 = Infinity;
+    for (const h of hits) {
+      const dx = x - h.x, dy = y - h.y;
+      const d2 = dx*dx + dy*dy;
+      if (d2 < minD2) { minD2 = d2; best = h; }
+    }
+    return (best && Math.sqrt(minD2) <= maxDist) ? best : null;
+  };
+
+  const pickHit = (clientX, clientY) => {
+    const { x, y } = getRelXY(clientX, clientY);
     const hits = canvas.__hits || [];
 
-    if (canvas.__chartType === 'bar'){
-      for (const h of hits){
-        if (x >= h.x && x <= h.x+h.w && y >= h.y && y <= h.y+h.h){ best = h; break; }
-      }
-      if (!best && hits.length){
-        let minDx = Infinity;
-        for (const h of hits){
-          const cx = h.x + h.w/2;
-          const dx = Math.abs(x - cx);
-          if (dx < minDx){ minDx = dx; best = h; }
-        }
-      }
+    let best = null;
+    if (canvas.__chartType === 'bar') {
+      best = hitTestBar(x, y, hits) || nearestBar(x, hits);
     } else {
-      let minD2 = Infinity;
-      for (const h of hits){
-        const d2 = (x-h.x)*(x-h.x) + (y-h.y)*(y-h.y);
-        if (d2 < minD2){ minD2 = d2; best = h; }
-      }
-      if (best && Math.sqrt(minD2) > 24) best = null;
+      best = nearestPoint(x, y, hits);
     }
-    return best ? {hit:best, clientX, clientY} : null;
+    return best ? { hit: best, clientX, clientY } : null;
   };
+
 
   let tapTimer = null;
 
@@ -90,7 +109,7 @@ function bindCanvasInteractions(canvas){
 
 // Canvas responsive
 function autosizeCanvas(canvas){
-  const ratio = parseFloat(canvas.getAttribute('data-aspect') || '0.4');
+ const ratio = parseFloat(canvas.dataset.aspect || '0.4');
   const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const cssW = canvas.parentElement.clientWidth || 600;
   const cssH = Math.max(160, Math.round(cssW * ratio));
@@ -231,7 +250,8 @@ function renderDesktopCharts(){
   const cL = document.getElementById('chartLibri12M');
   if (cL) {
     let series = {};
-    try { series = JSON.parse(cL.getAttribute('data-series') || '{}'); } catch(e){}
+ try { series = JSON.parse(cL.dataset.series || '{}'); } catch(e){}
+
     drawBars(cL, series, { totalLabel:'Totale 12 mesi', shortLabel:true });
   }
 
@@ -239,8 +259,9 @@ function renderDesktopCharts(){
   const cT = document.getElementById('chartTopCat');
   if (cT) {
     let labels = [], series = [];
-    try { labels = JSON.parse(cT.getAttribute('data-labels') || '[]'); } catch(e){}
-    try { series = JSON.parse(cT.getAttribute('data-series') || '[]'); } catch(e){}
+try { labels = JSON.parse(cT.dataset.labels || '[]'); } catch(e){}
+try { series = JSON.parse(cT.dataset.series || '[]'); } catch(e){}
+
     if (labels.length && series.length) drawMultiLine(cT, labels, series);
   }
 
@@ -248,8 +269,8 @@ function renderDesktopCharts(){
   const cR = document.getElementById('chartRichiesteMese');
   if (cR) {
     let raw = {};
-    try { raw = JSON.parse(cR.getAttribute('data-series') || '{}'); } catch(e){}
-    const keys = Object.keys(raw || {}).sort();
+   try { raw = JSON.parse(cR.dataset.series || '{}'); } catch(e){}
+   const keys = Object.keys(raw || {}).sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
     const mapped = {};
     keys.forEach(k => { mapped[k.slice(8,10)] = parseInt(raw[k]||0,10); });
     drawBars(cR, mapped, { totalLabel:'Totale mese' });
@@ -261,19 +282,19 @@ function renderChartIfNeeded(canvasId, type){
   if (!el || el.dataset.rendered === '1') return;
   if (type === 'richieste_sm') {
     let series = {};
-    try { series = JSON.parse(el.getAttribute('data-series') || '{}'); } catch(e){}
-    const keys = Object.keys(series || {}).sort();
+  try { series = JSON.parse(el.dataset.series || '{}'); } catch(e){}
+   const keys = Object.keys(series || {}).sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
     const mapped = {};
     keys.forEach(k => { mapped[k.slice(8,10)] = parseInt(series[k]||0,10); });
     drawBars(el, mapped, { totalLabel:'Totale' });
   } else if (type === 'libri12m_sm') {
     let series = {};
-    try { series = JSON.parse(el.getAttribute('data-series') || '{}'); } catch(e){}
+   try { series = JSON.parse(el.dataset.series || '{}'); } catch(e){}
     drawBars(el, series, { totalLabel:'Totale 12 mesi', shortLabel:true });
   } else if (type === 'topcat_sm') {
     let labels = [], series = [];
-    try { labels = JSON.parse(el.getAttribute('data-labels') || '[]'); } catch(e){}
-    try { series = JSON.parse(el.getAttribute('data-series') || '[]'); } catch(e){}
+   try { labels = JSON.parse(el.dataset.labels || '[]'); } catch(e){}
+try { series = JSON.parse(el.dataset.series || '[]'); } catch(e){}
     if (labels.length && series.length) drawMultiLine(el, labels, series);
   }
   el.dataset.rendered = '1';
@@ -286,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (calendarEl && window.FullCalendar) {
     let eventi = [];
-    try { eventi = JSON.parse(calendarEl.getAttribute('data-eventi') || '[]'); } catch(e){}
+  try { eventi = JSON.parse(calendarEl.dataset.eventi || '[]'); } catch(e){}
 
     const isSmall = () => window.matchMedia('(max-width: 720px)').matches;
 
@@ -378,13 +399,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (document.querySelector('[data-acc="acc-topcat-storico"].acc-open'))  renderChartIfNeeded('chartTopCat_sm','topcat_sm');
     }, 120);
   }, {passive:true});
-  let eventi = [];
-try { eventi = JSON.parse(calendarEl.getAttribute('data-eventi') || '[]'); } catch(e){
-  console.warn('Calendar: JSON parse error for data-eventi', e);
-}
-console.log('Calendar: eventi caricati =', Array.isArray(eventi) ? eventi.length : 'N/A');
-
+  if (calendarEl) {
+    let eventi = [];
+    try { eventi = JSON.parse(calendarEl.dataset.eventi || '[]'); } catch(e){
+      console.warn('Calendar: JSON parse error for data-eventi', e);
+    }
+    console.log('Calendar: eventi caricati =', Array.isArray(eventi) ? eventi.length : 'N/A');
+  }
 });
+
 
 /* ====== Orizzontal bars per “Lavori per categoria” ====== */
 (function(){
@@ -392,7 +415,8 @@ console.log('Calendar: eventi caricati =', Array.isArray(eventi) ? eventi.length
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
   var series = {};
-  try { series = JSON.parse(canvas.getAttribute('data-series')||'{}'); } catch(e){ series = {}; }
+try { series = JSON.parse(canvas.dataset.series || '{}'); } catch(e){ series = {}; }
+
 
   var labels = Object.keys(series);
   var values = labels.map(function(k){ return Number(series[k]||0); });
