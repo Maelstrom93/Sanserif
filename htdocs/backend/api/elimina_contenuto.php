@@ -117,7 +117,7 @@ if ($tipo === 'libro') {
         $conn->rollback();
         http_response_code(500);
       error_log("elimina_contenuto.php libro exception: ".$e->getMessage());
-echo json_encode(['success'=>false,'error'=>'Errore interno'], JSON_UNESCAPED_UNICODE);
+echo json_encode(['success'=>false,'error'=>ERR_INTERNAL], JSON_UNESCAPED_UNICODE);
 
     }
     exit;
@@ -147,4 +147,5 @@ if ($ok) {
 } else {
     echo json_encode(['success'=>false,'error'=>'Eliminazione cliente non riuscita'], JSON_UNESCAPED_UNICODE);
 }
+
 
