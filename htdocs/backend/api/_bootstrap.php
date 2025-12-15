@@ -11,16 +11,18 @@ require_once __DIR__ . '/../assets/funzioni/db/db.php';
 
 requireLogin();
 
+const ERR_INTERNAL = 'Errore interno';
+
 /**
  * Connessione DB sicura
  */
-function api_db(): mysqli {
+function apiDb(): mysqli {
     try {
         return db();
     } catch (Throwable $e) {
         error_log("API DB error: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['success'=>false,'error'=>'Errore interno']);
+        echo json_encode(['success'=>false,'error'=>ERR_INTERNAL], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }
@@ -28,7 +30,7 @@ function api_db(): mysqli {
 /**
  * Risposta OK
  */
-function api_ok(array $data = []): void {
+function apiOk(array $data = []): void {
     echo json_encode(array_merge(['success'=>true], $data), JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -36,7 +38,7 @@ function api_ok(array $data = []): void {
 /**
  * Risposta errore
  */
-function api_err(int $code = 400, string $msg = 'Errore'): void {
+function apiErr(int $code = 400, string $msg = 'Errore'): void {
     http_response_code($code);
     echo json_encode(['success'=>false,'error'=>$msg], JSON_UNESCAPED_UNICODE);
     exit;
