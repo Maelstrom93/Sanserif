@@ -1,0 +1,4 @@
+<?php
+class ApiException extends RuntimeException {}
+class DbException extends RuntimeException {}
+?>
