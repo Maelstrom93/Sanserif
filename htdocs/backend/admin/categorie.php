@@ -137,13 +137,13 @@ function countUsoCategoriaLavoro(mysqli $conn, int $id): int {
 /* ---------------------------
    AJAX: Crea/Aggiorna/Elimina
 ----------------------------*/
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
   header('Content-Type: application/json; charset=utf-8');
-  try{
+
+  try {
     $entity = $_POST['entity'] ?? '';
     if (!in_array($entity, ['articoli','libri','lavoro'], true)) {
-     throw new BadRequestException('Tipo non valido.');
+      throw new BadRequestException('Tipo non valido.');
     }
 
     $tabella = [
@@ -154,107 +154,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
 
     $action = $_POST['action'] ?? 'save';
 
+    // DELETE
     if ($action === 'delete') {
       $id = (int)($_POST['id'] ?? 0);
       if ($id <= 0) throw new ValidationException('ID mancante.');
 
-      // Blocchi d’uso
       if ($entity === 'articoli' && countUsoCategoriaArticoli($conn, $id) > 0) {
-       throw new OperationFailedException('Impossibile eliminare: categoria usata da almeno un articolo.');
+        throw new OperationFailedException('Impossibile eliminare: categoria usata da almeno un articolo.');
       }
       if ($entity === 'libri' && countUsoCategoriaLibri($conn, $id) > 0) {
-       throw new OperationFailedException('Impossibile eliminare: categoria in uso (libri o lavori).');
+        throw new OperationFailedException('Impossibile eliminare: categoria in uso (libri o lavori).');
       }
       if ($entity === 'lavoro' && countUsoCategoriaLavoro($conn, $id) > 0) {
-       throw new OperationFailedException('Impossibile eliminare: categoria in uso su lavori/attività.');
+        throw new OperationFailedException('Impossibile eliminare: categoria in uso su lavori/attività.');
       }
 
       $stmt = $conn->prepare("DELETE FROM {$tabella} WHERE id = ?");
+      if (!$stmt) throw new OperationFailedException('Eliminazione non riuscita.');
       $stmt->bind_param("i", $id);
-      $ok = $stmt->execute();
-      if (!$ok)throw new OperationFailedException('Eliminazione non riuscita.');
+
+      if (!$stmt->execute()) throw new OperationFailedException('Eliminazione non riuscita.');
 
       echo json_encode(['success'=>true, 'msg'=>'Categoria eliminata']);
       exit;
     }
 
-    // Save (create/update)
+    // SAVE (create/update)
     $id   = (int)($_POST['id'] ?? 0);
     $nome = trim((string)($_POST['nome'] ?? ''));
-    if ($nome === '')throw new OperationFailedException('Il nome è obbligatorio.');
-    if (mb_strlen($nome) > 191)throw new OperationFailedException('Nome troppo lungo.');
+    if ($nome === '') throw new OperationFailedException('Il nome è obbligatorio.');
+    if (mb_strlen($nome) > 191) throw new OperationFailedException('Nome troppo lungo.');
 
     if (nomeEsiste($conn, $tabella, $nome, $id)) {
-     throw new ConflictException('Esiste già una categoria con questo nome.');
+      throw new ConflictException('Esiste già una categoria con questo nome.');
     }
 
+    // UPDATE
     if ($id > 0) {
-      // rename
       if ($entity === 'articoli') {
-        // prendo il vecchio nome (per propagare sugli articoli)
         $old = getNomeById($conn, $tabella, $id);
         if ($old === null) throw new NotFoundException('Categoria non trovata.');
 
         $stmt = $conn->prepare("UPDATE {$tabella} SET nome = ? WHERE id = ?");
+        if (!$stmt) throw new OperationFailedException('Aggiornamento non riuscito.');
         $stmt->bind_param("si", $nome, $id);
-        $ok = $stmt->execute();
-        if (!$ok) throw new Exception('Aggiornamento non riuscito.');
+        if (!$stmt->execute()) throw new OperationFailedException('Aggiornamento non riuscito.');
 
         if ($old !== $nome) {
-          // Propagazione sugli articoli (campo testuale)
           $stmt2 = $conn->prepare("UPDATE articoli SET categoria = ? WHERE categoria = ?");
-          $stmt2->bind_param("ss", $nome, $old);
-          $stmt2->execute(); // non blocco se 0 righe
+          if ($stmt2) {
+            $stmt2->bind_param("ss", $nome, $old);
+            $stmt2->execute();
+          }
         }
       } else {
         $stmt = $conn->prepare("UPDATE {$tabella} SET nome = ? WHERE id = ?");
+        if (!$stmt) throw new OperationFailedException('Aggiornamento non riuscito.');
         $stmt->bind_param("si", $nome, $id);
-        $ok = $stmt->execute();
-        if (!$ok) throw new Exception('Aggiornamento non riuscito.');
+        if (!$stmt->execute()) throw new OperationFailedException('Aggiornamento non riuscito.');
       }
+
       echo json_encode(['success'=>true, 'msg'=>'Categoria aggiornata']);
       exit;
+    }
 
-    } else {
-      // create
-      if ($entity === 'lavoro') {
-      // create
-$stmt = $conn->prepare("INSERT INTO {$tabella} (nome) VALUES (?)");
-if (!$stmt) {
-  throw new OperationFailedException('Creazione non riuscita.');
-}
-$stmt->bind_param("s", $nome);
-$ok = $stmt->execute();
-if (!$ok) {
-  throw new OperationFailedException('Creazione non riuscita.');
-}
-echo json_encode(['success'=>true, 'msg'=>'Categoria creata']);
-exit;
-      }
+    // CREATE
+    $stmt = $conn->prepare("INSERT INTO {$tabella} (nome) VALUES (?)");
+    if (!$stmt) throw new OperationFailedException('Creazione non riuscita.');
+    $stmt->bind_param("s", $nome);
+    if (!$stmt->execute()) throw new OperationFailedException('Creazione non riuscita.');
 
-} catch (ValidationException|BadRequestException $e) {
-  http_response_code(400);
-  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
-  exit;
-} catch (NotFoundException $e) {
-  http_response_code(404);
-  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
-  exit;
-} catch (ConflictException $e) {
-  http_response_code(409);
-  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
-  exit;
-} catch (OperationFailedException $e) {
-  http_response_code(500);
-  echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
-  exit;
-} catch (Throwable $e) {
-  http_response_code(500);
-  echo json_encode(['success'=>false, 'msg'=>'Errore inatteso']);
-  exit;
+    echo json_encode(['success'=>true, 'msg'=>'Categoria creata']);
+    exit;
+
+  } catch (ValidationException|BadRequestException $e) {
+    http_response_code(400);
+    echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+    exit;
+  } catch (NotFoundException $e) {
+    http_response_code(404);
+    echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+    exit;
+  } catch (ConflictException $e) {
+    http_response_code(409);
+    echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+    exit;
+  } catch (OperationFailedException $e) {
+    http_response_code(500);
+    echo json_encode(['success'=>false, 'msg'=>$e->getMessage()]);
+    exit;
+  } catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['success'=>false, 'msg'=>'Errore inatteso']);
+    exit;
+  }
 }
 
-}
+
 
 /* ---------------------------
    Dati pagina
@@ -342,8 +338,8 @@ $catLavoro   = getCategorieLavoro($conn);
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="">
         <div>
-          <label>Nome categoria</label>
-          <input type="text" name="nome" placeholder="Es. Innovazione Editoriale">
+     <label for="nome-articoli">Nome categoria</label>
+<input id="nome-articoli" type="text" name="nome" placeholder="Es. Innovazione Editoriale">
           <div class="muted"><small>Rinominando, il nuovo nome verrà propagato sugli articoli collegati.</small></div>
         </div>
         <div style="display:flex; gap:8px; align-items:end;">
@@ -386,8 +382,9 @@ $catLavoro   = getCategorieLavoro($conn);
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="">
         <div>
-          <label>Nome categoria</label>
-          <input type="text" name="nome" placeholder="Es. Editing">
+       <label for="nome-libri">Nome categoria</label>
+<input id="nome-libri" type="text" name="nome" placeholder="Es. Editing">
+
           <div class="muted"><small>Usate in <code>libri_categorie</code> e in alcune viste dei lavori.</small></div>
         </div>
         <div style="display:flex; gap:8px; align-items:end;">
@@ -430,8 +427,9 @@ $catLavoro   = getCategorieLavoro($conn);
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="id" value="">
         <div>
-          <label>Nome categoria</label>
-          <input type="text" name="nome" placeholder="Es. Revisione, Impaginazione…">
+         <label for="nome-lavoro">Nome categoria</label>
+<input id="nome-lavoro" type="text" name="nome" placeholder="Es. Revisione, Impaginazione…">
+
           <div class="muted"><small>Tabella dedicata (<code>categorie_lavoro</code>). L’eliminazione è bloccata se in uso.</small></div>
         </div>
         <div style="display:flex; gap:8px; align-items:end;">
@@ -574,4 +572,5 @@ $catLavoro   = getCategorieLavoro($conn);
 </script>
 </body>
 </html>
+
 
