@@ -183,28 +183,40 @@ const CAN_EDIT = (ds.blogCanEdit === '1') || (AUTH.canEdit === true);
 
     // Quill per la MODALE dell'index (indipendente dall'editor della pagina nuovo_articolo)
     let qIndex = null;
-    function ensureQuillIndex(){
-      if (qIndex || !window.Quill) return qIndex;
-      const area = $('#contenutoEditor', modal);
-      if (!area) return null;
-      qIndex = new Quill(area, {
-        theme: 'snow',
-        placeholder: 'Scrivi il contenuto dell’articolo…',
-        modules: {
-          toolbar: [
-            [{ header: [1,2,3,false] }],
-            ['bold','italic','underline','strike'],
-            [{'list':'ordered'},{'list':'bullet'}],
-            [{'indent':'-1'},{'indent':'+1'}],
-            ['link','blockquote','code-block'],
-            [{ 'align': [] }],
-            [{ 'color': [] }, { 'background': [] }],
-            ['clean']
-          ]
-        }
-      });
-      return qIndex;
+  function ensureQuillIndex(){
+  if (qIndex || !window.Quill) return qIndex;
+
+  const area = $('#contenutoEditor', modal);
+  if (!area) return null;
+
+  qIndex = new Quill(area, {
+    theme: 'snow',
+    placeholder: 'Scrivi il contenuto dell’articolo…',
+    modules: {
+      toolbar: [
+        [{ header: [1,2,3,false] }],
+        ['bold','italic','underline','strike'],
+        [{'list':'ordered'},{'list':'bullet'}],
+        [{'indent':'-1'},{'indent':'+1'}],
+        ['link','blockquote','code-block'],
+        [{ 'align': [] }],
+        [{ 'color': [] }, { 'background': [] }],
+        ['clean']
+      ]
     }
+  });
+
+  // sync verso textarea accessibile (se esiste)
+  const ta = document.getElementById('contenutoTextarea');
+  if (ta) {
+    const sync = () => { ta.value = JSON.stringify(qIndex.getContents()); };
+    qIndex.on('text-change', sync);
+    sync(); // inizializza subito
+  }
+
+  return qIndex;
+}
+
     function setQuillContentIndex(data){
       const q = ensureQuillIndex();
       if (!q) return;
@@ -215,6 +227,8 @@ const CAN_EDIT = (ds.blogCanEdit === '1') || (AUTH.canEdit === true);
         if (delta && typeof delta === 'object' && delta.ops) { q.setContents(delta); return; }
       } catch(_){}
       q.clipboard.dangerouslyPasteHTML(raw);
+
+
     }
 
     // Selettori scoped modale
@@ -237,7 +251,9 @@ const CAN_EDIT = (ds.blogCanEdit === '1') || (AUTH.canEdit === true);
       const focusables = $all('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', modal)
         .filter(el=>!el.hasAttribute('disabled'));
       if (!focusables.length) return;
-      const first = focusables[0], last = focusables[focusables.length - 1];
+    const first = focusables.at(0);
+const last  = focusables.at(-1);
+
       if (e.key === 'Tab'){
         if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
@@ -429,9 +445,10 @@ const CAN_EDIT = (ds.blogCanEdit === '1') || (AUTH.canEdit === true);
       e.preventDefault();
 
       // Se presente l'editor Quill della modale, metti il Delta nel hidden
-      const q = ensureQuillIndex();
-      const hiddenDelta = document.getElementById('contenutoHidden');
-      if (q && hiddenDelta) hiddenDelta.value = JSON.stringify(q.getContents());
+const q = ensureQuillIndex();
+const ta = document.getElementById('contenutoTextarea');
+if (q && ta) ta.value = JSON.stringify(q.getContents());
+
 
       const fd = new FormData(form);
       try{
@@ -500,35 +517,4 @@ const CAN_EDIT = (ds.blogCanEdit === '1') || (AUTH.canEdit === true);
   })();
 })();
 
-/* ===== Quill: setup editor modale articoli ===== */
-(function(){
-  let quill;
-
- 
-  function setContent(data){
-    const q = ensureQuill();
-    if (!q) return;
-    const raw = (data && typeof data.contenuto === 'string') ? data.contenuto.trim() : '';
-    if (!raw){ q.setContents([]); return; }
-    try {
-      const delta = JSON.parse(raw);
-      if (delta && typeof delta === 'object' && delta.ops) { q.setContents(delta); return; }
-    } catch(e) {}
-    q.clipboard.dangerouslyPasteHTML(raw);
-  }
-
-  function getDeltaAsJSON(){
-    const q = ensureQuill();
-    if (!q) return '[]';
-    const delta = q.getContents();
-    return JSON.stringify(delta);
-  }
-
-  document.getElementById('formModificaArticolo')?.addEventListener('submit', function(){
-    const hidden = document.getElementById('contenutoHidden');
-    if (hidden) hidden.value = getDeltaAsJSON();
-  });
-
-  window.ArticoliEditor = { ensureQuill, setContent, getDeltaAsJSON };
-})();
 
