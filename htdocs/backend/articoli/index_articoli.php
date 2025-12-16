@@ -280,14 +280,15 @@ $tuttiArticoli  = estraiArticoli($conn);
         <input type="hidden" name="tipo" value="articolo">
         <input type="hidden" name="existing_img">
 
-        <label>Titolo</label>
-        <input type="text" name="title" required>
-
-        <label>Categoria</label>
+      <label for="titoloArticolo">Titolo</label>
+ <input type="text" id="titoloArticolo" name="title" required>
+        
+        <label for="categoriaArticolo">Categoria</label>
         <div class="cat-wrap">
           <div id="catChips" class="cat-chips"></div>
           <select name="category" id="categoriaArticolo" size="6" required></select>
           <div class="new-cat">
+            <label class="sr-only" for="nuovaCategoria">Nuova categoria</label>
             <input type="text" id="nuovaCategoria" placeholder="➕ Nuova categoria (opzionale)">
             <button type="button" class="btn-ghost" id="btnAddCatArt"><i class="fa-solid fa-plus"></i> Aggiungi alla lista</button>
           </div>
@@ -295,27 +296,27 @@ $tuttiArticoli  = estraiArticoli($conn);
           <input type="hidden" name="new_category" id="newCategoryArtHidden" value="">
         </div>
 
-        <label>Descrizione</label>
+       <label for="excerptArticolo">Descrizione</label>
         <textarea name="excerpt" id="excerptArticolo" rows="5" required></textarea>
 
-        <label>Contenuto</label>
-        <div id="contenutoEditor" class="q-editor"></div>
+         <div class="as-label" id="lblContenuto">Contenuto</div>
+       <div id="contenutoEditor" role="textbox" aria-multiline="true" aria-labelledby="lblContenuto"></div>
         <input type="hidden" name="contenuto" id="contenutoHidden">
 
-        <label>Data</label>
+        <label for="dateArticolo">Data</label>
         <input type="date" name="date" id="dateArticolo">
-
-        <label>Copertina attuale</label>
+<div class="as-label">Copertina attuale</div>
         <div class="cover-preview">
           <img id="imgEsistenteArticolo" src="" alt="Copertina" class="d-none">
         </div>
+        <label for="coverInputArt">Nuova copertina (opzionale)</label>
         <div class="cover-tools">
           <input type="file" name="cover" id="coverInputArt" accept="image/*">
           <button type="button" class="btn-ghost" id="btnRemoveCoverArt"><i class="fa-regular fa-trash-can"></i> Rimuovi copertina</button>
         </div>
 
-        <label>Link (opzionale)</label>
-        <input type="text" name="link" placeholder="https://…">
+         <label for="linkArticolo">Link (opzionale)</label>
+        <input type="text" id="linkArticolo" name="link" placeholder="https://...">
 
         <div class="actions">
           <button type="button" class="chip" data-modal-close>Annulla</button>
