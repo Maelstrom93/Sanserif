@@ -443,11 +443,14 @@ const eventi = safeJsonParse(calendarEl.dataset.eventi || '[]', []);
     '#c0392b', '#2980b9', '#7f8c8d', '#f1c40f', '#27ae60', '#9b59b6'
   ];
 
-  function colorFor(label){
-    let h = 0;
-for (let i = 0; i < label.length; i++) { h = (h*31 + (label.codePointAt(i) ?? 0)) >>> 0; }
-    return PALETTE[h % PALETTE.length];
+function colorFor(label) {
+  let h = 0;
+  for (const ch of label) {
+    h = (h * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
   }
+  return PALETTE[h % PALETTE.length];
+}
+
 
 
   function autosize(){
@@ -474,11 +477,12 @@ for (let i = 0; i < label.length; i++) { h = (h*31 + (label.codePointAt(i) ?? 0)
     const row = h / n;
 
   let maxV = 1;
-for (const v of values) if (v > maxV) maxV = v;
+for (const v of values) {
+  if (v > maxV) maxV = v;
+}
 
+ctx.strokeStyle = '#e5e7eb';
 
-
-    ctx.strokeStyle = '#e5e7eb';
     ctx.beginPath();
     ctx.moveTo(m.l, m.t); ctx.lineTo(m.l, H-m.b);
     ctx.moveTo(m.l, H-m.b); ctx.lineTo(W-m.r, H-m.b);
@@ -495,32 +499,34 @@ for (const v of values) if (v > maxV) maxV = v;
       ctx.fillStyle='#6b7280'; ctx.fillText(String(xVal), x-4, H-m.b+16);
     }
 
-      for (const [i, lab] of labels.entries()){
+     for (const [i, lab] of labels.entries()) {
   const y = m.t + i * row + row * 0.15;
   const barH = row * 0.7;
-  const v  = values[i] || 0;
+  const v = values[i] || 0;
   const bw = (v / maxV) * w;
 
   const col = colorFor(lab);
 
-      ctx.fillStyle = col;
-      ctx.fillRect(m.l, y, bw, barH);
+  ctx.fillStyle = col;
+  ctx.fillRect(m.l, y, bw, barH);
 
-      ctx.fillStyle='#0f172a';
-      ctx.textBaseline='middle';
-      ctx.font='13px system-ui';
-      const tx = 10, ty = y + barH/2;
-      const maxWidth = m.l - 14;
-      let txt = lab;
+  ctx.fillStyle = '#0f172a';
+  ctx.textBaseline = 'middle';
+  ctx.font = '13px system-ui';
 
-      while (ctx.measureText(txt).width > maxWidth && txt.length > 3) { txt = txt.slice(0, -2); }
-      if (txt !== lab) txt = txt + '…';
-      ctx.fillText(txt, tx, ty);
+  const tx = 10, ty = y + barH / 2;
+  const maxWidth = m.l - 14;
+  let txt = lab;
 
-      ctx.fillStyle='#374151';
-      ctx.font='bold 12px system-ui';
-      ctx.fillText(String(v), m.l + bw + 6, ty+1);
-    }
+  while (ctx.measureText(txt).width > maxWidth && txt.length > 3) txt = txt.slice(0, -2);
+  if (txt !== lab) txt += '…';
+  ctx.fillText(txt, tx, ty);
+
+  ctx.fillStyle = '#374151';
+  ctx.font = 'bold 12px system-ui';
+  ctx.fillText(String(v), m.l + bw + 6, ty + 1);
+}
+
     buildLegend();
   }
 
