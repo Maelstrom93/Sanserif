@@ -473,8 +473,9 @@ for (let i = 0; i < label.length; i++) { h = (h*31 + (label.codePointAt(i) ?? 0)
     const n = labels.length || 1;
     const row = h / n;
 
-    let maxV = 1;
-    for (let i = 0; i < values.length; i++) if (values[i] > maxV) maxV = values[i];
+  let maxV = 1;
+for (const v of values) if (v > maxV) maxV = v;
+
 
 
     ctx.strokeStyle = '#e5e7eb';
@@ -494,14 +495,13 @@ for (let i = 0; i < label.length; i++) { h = (h*31 + (label.codePointAt(i) ?? 0)
       ctx.fillStyle='#6b7280'; ctx.fillText(String(xVal), x-4, H-m.b+16);
     }
 
-       for (let i = 0; i < labels.length; i++){
-      const lab = labels[i];
-      const y = m.t + i * row + row * 0.15;
-      const barH = row * 0.7;
-      const v  = values[i] || 0;
-      const bw = (v / maxV) * w;
+      for (const [i, lab] of labels.entries()){
+  const y = m.t + i * row + row * 0.15;
+  const barH = row * 0.7;
+  const v  = values[i] || 0;
+  const bw = (v / maxV) * w;
 
-      const col = colorFor(lab);
+  const col = colorFor(lab);
 
       ctx.fillStyle = col;
       ctx.fillRect(m.l, y, bw, barH);
