@@ -131,9 +131,14 @@
     const f = Array.from(scope.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )).filter(el => !el.disabled && el.offsetParent !== null);
-    if (!f.length) return;
-      const first = f.at(0), last = f.at(-1);
-    first.focus();
+  if (!f.length) {
+  return;
+}
+
+const first = f[0];
+const last = f[f.length - 1];
+first.focus();
+
     function onKey(e) {
       if (e.key === "Escape") {
         scope.classList.remove("open");
