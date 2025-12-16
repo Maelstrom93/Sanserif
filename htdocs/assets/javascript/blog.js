@@ -135,9 +135,10 @@
   return;
 }
 
-const first = f[0];
-const last = f[f.length - 1];
+const first = f.at(0);
+const last  = f.at(-1);
 first.focus();
+
 
     function onKey(e) {
       if (e.key === "Escape") {
