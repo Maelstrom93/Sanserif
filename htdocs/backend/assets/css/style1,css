@@ -410,6 +410,8 @@ body.modal-open{ overflow:hidden; }
 .sheet .m-title{ margin:0; font-size:18px; display:flex; align-items:center; gap:8px; letter-spacing:.2px; font-weight:800; color:#004c60 }
 .sheet .m-body{ padding:14px; }
 .sheet label{ display:block; font-weight:700; margin:10px 0 6px; color:#0f172a; }
+.sheet .as-label{ display:block; font-weight:700; margin:10px 0 6px; color:#0f172a; }
+
 .sheet input[type="text"], .sheet input[type="date"], .sheet input[type="color"], .sheet textarea, .sheet select{
   width:100%; border:1px solid var(--border) !important; border-radius:10px; padding:10px; font:inherit; background:#fff;
   transition: box-shadow .12s ease, border-color .12s ease;
