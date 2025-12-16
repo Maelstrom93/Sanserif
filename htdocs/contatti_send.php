@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/assets/funzioni/session_https.php';
-$secure = ss_bootstrap_https_session();
+ss_bootstrap_https_session();
 
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
@@ -88,5 +88,6 @@ if ($mailOk) {
   header('Location: /contatti?err=' . $code, true, 303);
 }
 exit;
+
 
 
