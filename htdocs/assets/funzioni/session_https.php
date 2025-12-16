@@ -1,30 +1,42 @@
 <?php
 // htdocs/assets/funzioni/session_https.php
 
-function ss_is_https_request(): bool
+function ssIsHttpsRequest(): bool
 {
-  if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
-  if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') return true;
-  if (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') return true;
+  $https = $_SERVER['HTTPS'] ?? '';
+  if (!empty($https) && $https !== 'off') {
+    return true;
+  }
+
+  $xfp = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+  if ($xfp === 'https') {
+    return true;
+  }
+
+  $xfs = $_SERVER['HTTP_X_FORWARDED_SSL'] ?? '';
+  if ($xfs === 'on') {
+    return true;
+  }
+
   return false;
 }
 
-function ss_force_https(): void
+function ssForceHttps(): void
 {
-  if (ss_is_https_request()) return;
+  if (ssIsHttpsRequest()) {
+    return;
+  }
 
-  $host = $_SERVER['HTTP_X_FORWARDED_HOST']
-    ?? ($_SERVER['HTTP_HOST'] ?? '');
-
+  $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? ($_SERVER['HTTP_HOST'] ?? '');
   $uri  = $_SERVER['REQUEST_URI'] ?? '/';
 
   header('Location: https://' . $host . $uri, true, 301);
   exit;
 }
 
-function ss_bootstrap_https_session(): void
+function ssBootstrapHttpsSession(): void
 {
-  ss_force_https();
+  ssForceHttps();
 
   // A questo punto siamo sicuramente in HTTPS -> secure=true è sempre safe
   session_set_cookie_params([
