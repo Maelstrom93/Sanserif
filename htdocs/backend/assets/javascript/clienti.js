@@ -118,18 +118,20 @@
     });
 
     // piccola validazione lato client per email
-    const email = formNew.querySelector('input[name="email"]');
-    email?.addEventListener('blur', ()=>{
-      if (email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-        email.setCustomValidity('Inserisci un indirizzo email valido');
-      } else {
-        email.setCustomValidity('');
-      }
-    });
+  const email = formNew.querySelector('input[name="email"]');
+email?.addEventListener('blur', () => {
+  email.value = email.value.trim();
+  if (!email.checkValidity()) {
+    email.setCustomValidity('Inserisci un indirizzo email valido');
+  } else {
+    email.setCustomValidity('');
   }
+});
+
 
   window.addEventListener('pagehide', ()=>{
     if (modal?.classList.contains('open')) modal.classList.remove('open','closing');
   });
 
 })();
+
