@@ -3,23 +3,26 @@
 
 function ssIsHttpsRequest(): bool
 {
+  $isHttps = false;
+
   $https = $_SERVER['HTTPS'] ?? '';
   if (!empty($https) && $https !== 'off') {
-    return true;
+    $isHttps = true;
   }
 
   $xfp = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
   if ($xfp === 'https') {
-    return true;
+    $isHttps = true;
   }
 
   $xfs = $_SERVER['HTTP_X_FORWARDED_SSL'] ?? '';
   if ($xfs === 'on') {
-    return true;
+    $isHttps = true;
   }
 
-  return false;
+  return $isHttps;
 }
+
 
 function ssForceHttps(): void
 {
