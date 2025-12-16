@@ -1,5 +1,5 @@
 <?php
-// assets/funzioni/session_https.php
+// htdocs/assets/funzioni/session_https.php
 
 function ss_is_https_request(): bool
 {
@@ -9,18 +9,24 @@ function ss_is_https_request(): bool
   return false;
 }
 
-function ss_bootstrap_https_session(): bool
+function ss_force_https(): void
 {
-  $secure = ss_is_https_request();
+  if (ss_is_https_request()) return;
 
-  // Forza HTTPS (così 'secure' => true è sempre ok)
-  if (!$secure) {
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    $uri  = $_SERVER['REQUEST_URI'] ?? '/';
-    header('Location: https://' . $host . $uri, true, 301);
-    exit;
-  }
+  $host = $_SERVER['HTTP_X_FORWARDED_HOST']
+    ?? ($_SERVER['HTTP_HOST'] ?? '');
 
+  $uri  = $_SERVER['REQUEST_URI'] ?? '/';
+
+  header('Location: https://' . $host . $uri, true, 301);
+  exit;
+}
+
+function ss_bootstrap_https_session(): void
+{
+  ss_force_https();
+
+  // A questo punto siamo sicuramente in HTTPS -> secure=true è sempre safe
   session_set_cookie_params([
     'lifetime' => 0,
     'path'     => '/',
@@ -30,7 +36,7 @@ function ss_bootstrap_https_session(): bool
     'samesite' => 'Lax',
   ]);
 
-  if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-
-  return $secure;
+  if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+  }
 }
