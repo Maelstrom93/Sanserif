@@ -226,7 +226,10 @@ const CAN_EDIT = (ds.blogCanEdit === '1') || (AUTH.canEdit === true);
         const delta = JSON.parse(raw);
         if (delta && typeof delta === 'object' && delta.ops) { q.setContents(delta); return; }
       } catch(_){}
-      q.clipboard.dangerouslyPasteHTML(raw);
+     q.clipboard.dangerouslyPasteHTML(raw);
+
+const ta = document.getElementById('contenutoTextarea');
+if (ta) ta.value = JSON.stringify(q.getContents());
 
 
     }
@@ -440,27 +443,34 @@ const last  = focusables.at(-1);
     }
 
     // Submit salva modifiche (bloccato se !CAN_EDIT)
-    form.addEventListener('submit', async (e)=>{
-      if (!CAN_EDIT) { e.preventDefault(); return; }
-      e.preventDefault();
+   form.addEventListener('submit', async (e) => {
+  if (!CAN_EDIT) { e.preventDefault(); return; }
+  e.preventDefault();
 
-      // Se presente l'editor Quill della modale, metti il Delta nel hidden
-const q = ensureQuillIndex();
-const ta = document.getElementById('contenutoTextarea');
-if (q && ta) ta.value = JSON.stringify(q.getContents());
+  const q = ensureQuillIndex();
+  const ta = document.getElementById('contenutoTextarea');
 
+  if (q && ta) {
+    ta.value = JSON.stringify(q.getContents());
+  }
 
-      const fd = new FormData(form);
-      try{
-        const res = await fetch('../api/modifica_contenuto.php', { method:'POST', body: fd, credentials:'same-origin' });
-        const out = await res.json().catch(()=>({success:false}));
-        if (!res.ok || !out.success) throw new Error('Save failed');
-        location.reload();
-      }catch(err){
-        console.error(err);
-        alert('Salvataggio non riuscito.');
-      }
+  const fd = new FormData(form);
+
+  try {
+    const res = await fetch('../api/modifica_contenuto.php', {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin'
     });
+    const out = await res.json().catch(() => ({ success: false }));
+    if (!res.ok || !out.success) throw new Error('Save failed');
+    location.reload();
+  } catch (err) {
+    console.error(err);
+    alert('Salvataggio non riuscito.');
+  }
+});
+
 
     // Elimina (mostrato solo se CAN_EDIT)
     $all('.del-article').forEach(btn=>{
@@ -516,5 +526,6 @@ if (q && ta) ta.value = JSON.stringify(q.getContents());
     initSinossiToggles(document);
   })();
 })();
+
 
 
