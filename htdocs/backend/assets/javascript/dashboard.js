@@ -24,7 +24,7 @@ function sortKeys(obj) {
 
 function mapDayKeys(raw) {
   const mapped = {};
-  sortKeys(raw).forEach(k => { mapped[k.slice(8,10)] = parseInt(raw[k] || 0, 10); });
+sortKeys(raw).forEach(k => { mapped[k.slice(8,10)] = Number.parseInt(raw[k] || 0, 10); });
   return mapped;
 }
 
@@ -430,48 +430,52 @@ const eventi = safeJsonParse(calendarEl.dataset.eventi || '[]', []);
 
 /* ====== Orizzontal bars per “Lavori per categoria” ====== */
 (function(){
-  var canvas = document.getElementById('chartLavoriCat');
+  const canvas = document.getElementById('chartLavoriCat');
   if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-var series = safeJsonParse(canvas.dataset.series || '{}', {});
+  const ctx = canvas.getContext('2d');
+  const series = safeJsonParse(canvas.dataset.series || '{}', {});
 
+  const labels = Object.keys(series);
+  const values = labels.map(k => Number(series[k] || 0));
 
-
-  var labels = Object.keys(series);
-  var values = labels.map(function(k){ return Number(series[k]||0); });
-
-  var PALETTE = [
+  const PALETTE = [
     '#004c60', '#e67e22', '#8e44ad', '#2ecc71', '#d35400', '#16a085',
     '#c0392b', '#2980b9', '#7f8c8d', '#f1c40f', '#27ae60', '#9b59b6'
   ];
+
   function colorFor(label){
-    var h = 0;
-    for (var i=0; i<label.length; i++) { h = (h*31 + label.charCodeAt(i)) >>> 0; }
+    let h = 0;
+    for (let i = 0; i < label.length; i++) { h = (h*31 + label.charCodeAt(i)) >>> 0; }
     return PALETTE[h % PALETTE.length];
   }
 
+
   function autosize(){
-    var dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
-    var cssW = canvas.parentElement.clientWidth || 600;
-    var rows = Math.max(3, labels.length);
-    var cssH = Math.max(180, 26*rows + 64);
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const cssW = canvas.parentElement.clientWidth || 600;
+    const rows = Math.max(3, labels.length);
+    const cssH = Math.max(180, 26 * rows + 64);
     canvas.style.width  = cssW + 'px';
     canvas.style.height = cssH + 'px';
     canvas.width  = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    return {W:cssW, H:cssH};
+    return { W: cssW, H: cssH };
   }
 
+
   function draw(){
-    var WH = autosize();
-    var W = WH.W, H = WH.H;
+    const WH = autosize();
+    const W = WH.W, H = WH.H;
     ctx.clearRect(0,0,W,H);
-    var m = {t:16, r:16, b:32, l: Math.min(260, Math.max(120, Math.ceil(W*0.28)))};
-    var w = W - m.l - m.r, h = H - m.t - m.b;
-    var n = labels.length || 1;
-    var row = h / n;
-    var maxV = 1; for (var i=0;i<values.length;i++) if (values[i]>maxV) maxV = values[i];
+    const m = {t:16, r:16, b:32, l: Math.min(260, Math.max(120, Math.ceil(W*0.28)))};
+    const w = W - m.l - m.r, h = H - m.t - m.b;
+    const n = labels.length || 1;
+    const row = h / n;
+
+    let maxV = 1;
+    for (let i = 0; i < values.length; i++) if (values[i] > maxV) maxV = values[i];
+
 
     ctx.strokeStyle = '#e5e7eb';
     ctx.beginPath();
@@ -480,32 +484,35 @@ var series = safeJsonParse(canvas.dataset.series || '{}', {});
     ctx.stroke();
 
     ctx.fillStyle = '#6b7280'; ctx.font='12px system-ui';
-    var ticks = 4;
-    for(var i=0;i<=ticks;i++){
-      var xVal = Math.round(maxV*i/ticks);
-      var x = m.l + (xVal/maxV)*w;
+       const ticks = 4;
+    for (let i = 0; i <= ticks; i++){
+      const xVal = Math.round(maxV * i / ticks);
+      const x = m.l + (xVal / maxV) * w;
+
       ctx.strokeStyle = '#f3f4f6';
       ctx.beginPath(); ctx.moveTo(x, m.t); ctx.lineTo(x, H-m.b); ctx.stroke();
       ctx.fillStyle='#6b7280'; ctx.fillText(String(xVal), x-4, H-m.b+16);
     }
 
-    for (var i=0;i<labels.length;i++){
-      var lab = labels[i];
-      var y = m.t + i*row + row*0.15;
-      var barH = row*0.7;
-      var v  = values[i]||0;
-      var bw = (v/maxV)*w;
+       for (let i = 0; i < labels.length; i++){
+      const lab = labels[i];
+      const y = m.t + i * row + row * 0.15;
+      const barH = row * 0.7;
+      const v  = values[i] || 0;
+      const bw = (v / maxV) * w;
 
-      var col = colorFor(lab);
+      const col = colorFor(lab);
+
       ctx.fillStyle = col;
       ctx.fillRect(m.l, y, bw, barH);
 
       ctx.fillStyle='#0f172a';
       ctx.textBaseline='middle';
       ctx.font='13px system-ui';
-      var tx = 10, ty = y + barH/2;
-      var maxWidth = m.l - 14;
-      var txt = lab;
+      const tx = 10, ty = y + barH/2;
+      const maxWidth = m.l - 14;
+      let txt = lab;
+
       while (ctx.measureText(txt).width > maxWidth && txt.length > 3) { txt = txt.slice(0, -2); }
       if (txt !== lab) txt = txt + '…';
       ctx.fillText(txt, tx, ty);
@@ -517,24 +524,25 @@ var series = safeJsonParse(canvas.dataset.series || '{}', {});
     buildLegend();
   }
 
-  function buildLegend(){
-    var host = canvas.parentElement;
-    var old = host.querySelector('.chart-legend');
+   function buildLegend(){
+    const host = canvas.parentElement;
+    const old = host.querySelector('.chart-legend');
     if (old) old.remove();
-    var legend = document.createElement('div');
+    const legend = document.createElement('div');
     legend.className = 'chart-legend';
     legend.style.display = 'flex';
     legend.style.flexWrap = 'wrap';
     legend.style.gap = '8px 14px';
     legend.style.marginTop = '8px';
-    var maxLegend = Math.min(labels.length, 12);
-    for (var i=0;i<maxLegend;i++){
-      var chip = document.createElement('span');
+    const maxLegend = Math.min(labels.length, 12);
+
+    for (let i = 0; i < maxLegend; i++){
+      const chip = document.createElement('span');
       chip.style.display = 'inline-flex';
       chip.style.alignItems = 'center';
       chip.style.gap = '6px';
       chip.style.fontSize = '12px';
-      var dot = document.createElement('span');
+      const dot = document.createElement('span');
       dot.style.width = '10px';
       dot.style.height = '10px';
       dot.style.borderRadius = '50%';
@@ -547,16 +555,18 @@ var series = safeJsonParse(canvas.dataset.series || '{}', {});
   }
 
   draw();
-  window.addEventListener('resize', function(){ draw(); }, {passive:true});
+  window.addEventListener('resize', () => { draw(); }, { passive:true });
+
 })();
 
 
 
 /* ====== Dropdown “Azioni” ====== */
 (function(){
-  var btn  = document.querySelector('.actions-trigger');
-  var menu = document.getElementById('menuAzioni');
+  const btn  = document.querySelector('.actions-trigger');
+  const menu = document.getElementById('menuAzioni');
   if(!btn || !menu) return;
+
 
   function openMenu(){ menu.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
   function closeMenu(){ menu.classList.remove('open'); btn.setAttribute('aria-expanded','false'); }
