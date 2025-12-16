@@ -10,7 +10,7 @@
   const $$ = (sel, scope = document) => Array.from(scope.querySelectorAll(sel));
   const api  = (n) => `${API_BASE}${n}`;
   const norm = (s) => String(s ?? "").trim();
-  const slug = (s) => norm(s).toLowerCase().replace(/[^a-z0-9]+/gi, "-");
+
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -91,21 +91,24 @@
       });
     });
 
+     const resetFilterKey = (k) => {
+      if (!k || !filters[k]) return;
+      filters[k].clear();
+
+      // uncheck (senza callback annidate)
+      for (const c of $$("#list-" + k + " input[type=checkbox]")) c.checked = false;
+
+      updateCounts();
+      updateChips();
+      applyAndRender();
+    };
+
     $$(".link-reset").forEach(el => {
-      el.addEventListener("click", () => {
-        const k = el.dataset.reset;
-        if (k && filters[k]) {
-          filters[k].clear();
-          // uncheck
-          $$("#list-" + k + " input[type=checkbox]").forEach(c => c.checked = false);
-          updateCounts();
-          updateChips();
-          applyAndRender();
-        }
-      });
+      el.addEventListener("click", () => resetFilterKey(el.dataset.reset));
     });
 
-    window.addEventListener("resize", () => {
+
+      globalThis.addEventListener("resize", () => {
       $$(".popover.open").forEach(pop => {
         const btn = document.querySelector(`[aria-controls="${pop.id}"]`) || pop.previousElementSibling;
         if (btn) positionPopover(btn, pop);
@@ -121,7 +124,7 @@
   function positionPopover(btn, pop) {
     const r = btn.getBoundingClientRect();
     pop.style.left = r.left + "px";
-    pop.style.top  = (r.bottom + window.scrollY) + "px";
+       pop.style.top  = (r.bottom + globalThis.scrollY) + "px";
   }
 
   function trapWithin(scope) {
@@ -129,7 +132,7 @@
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )).filter(el => !el.disabled && el.offsetParent !== null);
     if (!f.length) return;
-    const first = f[0], last = f[f.length - 1];
+      const first = f.at(0), last = f.at(-1);
     first.focus();
     function onKey(e) {
       if (e.key === "Escape") {
@@ -237,7 +240,12 @@
     if (grid) setTimeout(() => { grid.classList.remove("is-updating"); }, 140);
   }
 
+  function revealCards(grid) {
+    for (const el of $$(".pcard:not(.is-visible)", grid)) el.classList.add("is-visible");
+  }
+
   function renderGrid() {
+
     const grid = $("#blogGrid");
     if (!grid) return;
     grid.innerHTML = "";
@@ -252,7 +260,7 @@
     let i = 0;
     const BATCH = 24;
 
-    (function loop() {
+     const renderBatch = () => {
       for (let c = 0; c < BATCH && i < VIRT.length; c++, i++) {
         const a = VIRT[i];
         const card = document.createElement("div");
@@ -277,14 +285,15 @@
         });
         frag.appendChild(card);
       }
+
       grid.appendChild(frag);
 
-      requestAnimationFrame(() => {
-        $$(".pcard:not(.is-visible)", grid).forEach(el => el.classList.add("is-visible"));
-      });
+      requestAnimationFrame(() => revealCards(grid));
+      if (i < VIRT.length) requestAnimationFrame(renderBatch);
+    };
 
-      if (i < VIRT.length) requestAnimationFrame(loop);
-    })();
+    renderBatch();
+
   }
 
   function formatDate(dateStr) {
@@ -370,7 +379,7 @@
     const modal = $("#modal");
     const body = $("#modal-body");
     if (!modal || !body) return;
-    window._lastFocusedEl = triggerEl || document.activeElement;
+    globalThis._lastFocusedEl = triggerEl || document.activeElement;
     body.innerHTML = `
       <h2 id="modal-title">${escapeHtml(article.title || "-")}</h2>
       <p class="meta">${escapeHtml(formatDate(article.date))}${article.category ? " · " + escapeHtml(article.category) : ""}</p>
@@ -397,9 +406,10 @@
     if (!modal) return;
     modal.classList.remove("show");
     document.body.style.overflow = "";
-    if (window._lastFocusedEl && typeof window._lastFocusedEl.focus === "function") {
-      window._lastFocusedEl.focus();
+    if (globalThis._lastFocusedEl && typeof globalThis._lastFocusedEl.focus === "function") {
+      globalThis._lastFocusedEl.focus();
     }
+
   }
 
   // Bind chiusura modale (compat CSP)
@@ -426,5 +436,5 @@
   })();
 
   // Esponi se serve altrove
-  window.chiudiModal = chiudiModal;
+   globalThis.chiudiModal = chiudiModal;
 })();
