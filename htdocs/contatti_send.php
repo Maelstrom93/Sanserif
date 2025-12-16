@@ -1,36 +1,9 @@
 <?php
 declare(strict_types=1);
 
-/**
- * contatti_send.php
- * - CSRF + honeypot
- * - invio email
- * - salvataggio su contact_requests
- * - redirect con ok/err
- */
+require_once __DIR__ . '/assets/funzioni/session_https.php';
+$secure = ss_bootstrap_https_session();
 
-$secure =
-  (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-  || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-
-// Se vuoi che in produzione sia SEMPRE https:
-if (!$secure) {
-  $host = $_SERVER['HTTP_HOST'] ?? '';
-  $uri  = $_SERVER['REQUEST_URI'] ?? '/';
-  header('Location: https://' . $host . $uri, true, 301);
-  exit;
-}
-
-session_set_cookie_params([
-  'lifetime' => 0,
-  'path'     => '/',
-  'domain'   => '',
-  'secure'   => true,     // ora è safe perché stai forzando https
-  'httponly' => true,
-  'samesite' => 'Lax',
-]);
-
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
   header('Location: /contatti?err=send', true, 303);
@@ -115,4 +88,5 @@ if ($mailOk) {
   header('Location: /contatti?err=' . $code, true, 303);
 }
 exit;
+
 
