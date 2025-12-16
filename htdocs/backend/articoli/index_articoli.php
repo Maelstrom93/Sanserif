@@ -299,9 +299,13 @@ $tuttiArticoli  = estraiArticoli($conn);
        <label for="excerptArticolo">Descrizione</label>
         <textarea name="excerpt" id="excerptArticolo" rows="5" required></textarea>
 
-         <div class="as-label" id="lblContenuto">Contenuto</div>
-       <div id="contenutoEditor" role="textbox" aria-multiline="true" aria-labelledby="lblContenuto"></div>
-        <input type="hidden" name="contenuto" id="contenutoHidden">
+      <label for="contenutoTextarea" class="as-label" id="lblContenuto">Contenuto</label>
+
+<!-- Controllo accessibile e “reale” -->
+<textarea id="contenutoTextarea" name="contenuto" class="sr-only" aria-labelledby="lblContenuto"></textarea>
+
+<!-- Editor visuale (Quill) -->
+<div id="contenutoEditor" aria-hidden="true"></div>
 
         <label for="dateArticolo">Data</label>
         <input type="date" name="date" id="dateArticolo">
