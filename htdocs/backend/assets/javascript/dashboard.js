@@ -445,7 +445,7 @@ const eventi = safeJsonParse(calendarEl.dataset.eventi || '[]', []);
 
   function colorFor(label){
     let h = 0;
-    for (let i = 0; i < label.length; i++) { h = (h*31 + label.charCodeAt(i)) >>> 0; }
+for (let i = 0; i < label.length; i++) { h = (h*31 + (label.codePointAt(i) ?? 0)) >>> 0; }
     return PALETTE[h % PALETTE.length];
   }
 
@@ -536,21 +536,24 @@ const eventi = safeJsonParse(calendarEl.dataset.eventi || '[]', []);
     legend.style.marginTop = '8px';
     const maxLegend = Math.min(labels.length, 12);
 
-    for (let i = 0; i < maxLegend; i++){
-      const chip = document.createElement('span');
-      chip.style.display = 'inline-flex';
-      chip.style.alignItems = 'center';
-      chip.style.gap = '6px';
-      chip.style.fontSize = '12px';
-      const dot = document.createElement('span');
-      dot.style.width = '10px';
-      dot.style.height = '10px';
-      dot.style.borderRadius = '50%';
-      dot.style.background = colorFor(labels[i]);
-      chip.appendChild(dot);
-      chip.appendChild(document.createTextNode(labels[i]));
-      legend.appendChild(chip);
-    }
+ for (const lab of labels.slice(0, maxLegend)){
+  const chip = document.createElement('span');
+  chip.style.display = 'inline-flex';
+  chip.style.alignItems = 'center';
+  chip.style.gap = '6px';
+  chip.style.fontSize = '12px';
+
+  const dot = document.createElement('span');
+  dot.style.width = '10px';
+  dot.style.height = '10px';
+  dot.style.borderRadius = '50%';
+  dot.style.background = colorFor(lab);
+
+  chip.appendChild(dot);
+  chip.appendChild(document.createTextNode(lab));
+  legend.appendChild(chip);
+}
+
     host.appendChild(legend);
   }
 
