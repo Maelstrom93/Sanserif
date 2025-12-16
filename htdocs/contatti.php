@@ -2,15 +2,28 @@
 require_once 'assets/funzioni/funzioni.php';
 log_visita('Contatti');
 
-$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+$secure =
+  (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+  || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+// Se vuoi che in produzione sia SEMPRE https:
+if (!$secure) {
+  $host = $_SERVER['HTTP_HOST'] ?? '';
+  $uri  = $_SERVER['REQUEST_URI'] ?? '/';
+  header('Location: https://' . $host . $uri, true, 301);
+  exit;
+}
+
 session_set_cookie_params([
   'lifetime' => 0,
-  'path' => '/',
-  'domain' => '',
-  'secure' => $secure,
+  'path'     => '/',
+  'domain'   => '',
+  'secure'   => true,     // ora è safe perché stai forzando https
   'httponly' => true,
-  'samesite' => 'Lax'
+  'samesite' => 'Lax',
 ]);
+
+
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
 if (empty($_SESSION['csrf_token'])) {
