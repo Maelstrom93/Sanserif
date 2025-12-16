@@ -404,16 +404,16 @@ unset($u);
     <form id="utenteForm" class="form-grid" method="post" action="#" novalidate>
       <input type="hidden" name="ajax" value="1">
       <input type="hidden" name="id" id="id">
-      <div>
-        <label>Nome</label>
+             <div>
+        <label for="nome">Nome</label>
         <input type="text" name="nome" id="nome" required>
       </div>
-      <div>
-        <label>Username</label>
+            <div>
+        <label for="username">Username</label>
         <input type="text" name="username" id="username" required>
       </div>
-      <div>
-        <label>Email</label>
+            <div>
+        <label for="email">Email</label>
         <div class="input-group">
           <input type="email" name="email" id="email" required placeholder="nome@dominio.it">
           <button type="button" id="copyEmail" aria-label="Copia email">
@@ -422,8 +422,8 @@ unset($u);
         </div>
         <div class="hint">Obbligatoria, univoca.</div>
       </div>
-      <div>
-        <label>Password <span class="muted">(lascia vuoto per non cambiare)</span></label>
+           <div>
+        <label for="password">Password <span class="muted">(lascia vuoto per non cambiare)</span></label>
         <div class="input-group" id="pwdGroup">
           <input type="password" name="password" id="password" autocomplete="new-password" placeholder="••••••••">
           <button type="button" id="togglePwd" aria-label="Mostra/Nascondi password"><i class="fa-regular fa-eye"></i></button>
@@ -431,8 +431,10 @@ unset($u);
         <div class="hint">Minimo 8 caratteri consigliati.</div>
       </div>
 
-      <div class="col-2">
-        <label>Ruoli</label>
+
+        <fieldset class="col-2" style="border:0; padding:0; margin:0; min-width:0;">
+        <legend style="padding:0; margin:0 0 6px; font-weight:700; color:#0f172a;">Ruoli</legend>
+
         <div id="ruoliBox" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
           <?php foreach ($ruoliDisponibili as $r): ?>
             <label class="chip" style="cursor:pointer;">
@@ -441,25 +443,30 @@ unset($u);
             </label>
           <?php endforeach; ?>
         </div>
-<div class="hint">Seleziona un solo ruolo (Admin / Intermedio / Base).</div>
-      </div>
 
-      <div class="col-2" id="box-perm-granulari" style="margin-top:6px; display:none;">
-  <label>Permessi specifici (solo per Utente intermedio)</label>
-  <div style="display:flex; gap:16px; flex-wrap:wrap;">
-    <fieldset style="border:1px solid var(--border); padding:8px 10px; border-radius:10px;">
-      <legend style="padding:0 6px;">Blog</legend>
-      <label class="chip"><input type="checkbox" name="perm_grant[]" value="blog.view"> Vedi</label>
-      <label class="chip"><input type="checkbox" name="perm_grant[]" value="blog.edit"> Modifica</label>
-    </fieldset>
-    <fieldset style="border:1px solid var(--border); padding:8px 10px; border-radius:10px;">
-      <legend style="padding:0 6px;">Portfolio</legend>
-      <label class="chip"><input type="checkbox" name="perm_grant[]" value="portfolio.view"> Vedi</label>
-      <label class="chip"><input type="checkbox" name="perm_grant[]" value="portfolio.edit"> Modifica</label>
-    </fieldset>
-  </div>
-  <div class="hint">Se l’utente non è “intermedio”, queste spunte sono ignorate.</div>
-</div>
+        <div class="hint">Seleziona un solo ruolo (Admin / Intermedio / Base).</div>
+      </fieldset>
+
+           <fieldset class="col-2" id="box-perm-granulari" style="margin-top:6px; display:none; border:0; padding:0; margin-left:0; margin-right:0; min-width:0;">
+        <legend style="padding:0; margin:0 0 6px; font-weight:700; color:#0f172a;">Permessi specifici (solo per Utente intermedio)</legend>
+
+        <div style="display:flex; gap:16px; flex-wrap:wrap;">
+          <fieldset style="border:1px solid var(--border); padding:8px 10px; border-radius:10px;">
+            <legend style="padding:0 6px;">Blog</legend>
+            <label class="chip"><input type="checkbox" name="perm_grant[]" value="blog.view"> Vedi</label>
+            <label class="chip"><input type="checkbox" name="perm_grant[]" value="blog.edit"> Modifica</label>
+          </fieldset>
+
+          <fieldset style="border:1px solid var(--border); padding:8px 10px; border-radius:10px;">
+            <legend style="padding:0 6px;">Portfolio</legend>
+            <label class="chip"><input type="checkbox" name="perm_grant[]" value="portfolio.view"> Vedi</label>
+            <label class="chip"><input type="checkbox" name="perm_grant[]" value="portfolio.edit"> Modifica</label>
+          </fieldset>
+        </div>
+
+        <div class="hint">Se l’utente non è “intermedio”, queste spunte sono ignorate.</div>
+      </fieldset>
+
 
 
       <div class="col-2" style="display:flex; gap:8px; justify-content:flex-end;">
@@ -675,4 +682,4 @@ ruoliBox.querySelectorAll('input[type="checkbox"]').forEach(ch=>{
 
 </script>
 </body>
-</html>
+</html>
