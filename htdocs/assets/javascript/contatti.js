@@ -53,15 +53,34 @@
       setTimeout(() => { history.replaceState(null, '', location.pathname); }, 5000);
     }
   }
+function basicValidate(form) {
+  const email = form.querySelector('input[type="email"]');
+  const msg   = form.querySelector('textarea[name="msg"]');
 
-  function basicValidate(form) {
-    const email = form.querySelector('input[type="email"]');
-    const msg   = form.querySelector('textarea[name="msg"]');
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim())) { alert('Inserisci un indirizzo email valido.'); email.focus(); return false; }
-    if (msg && msg.value.trim().length < 3) { alert('Il messaggio è troppo corto.'); msg.focus(); return false; }
-    return true;
+  if (email) {
+    email.value = email.value.trim();
+    if (!email.checkValidity()) {
+      alert('Inserisci un indirizzo email valido.');
+      email.focus();
+      return false;
+    }
   }
+
+  if (msg) {
+    const v = msg.value.trim();
+    if (v.length < 3) {
+      alert('Il messaggio è troppo corto.');
+      msg.focus();
+      return false;
+    }
+    msg.value = v; // opzionale: salva la versione "trimmed"
+  }
+
+  return true;
+}
+
 
   formPriv.addEventListener('submit', (e) => { if (!basicValidate(formPriv)) e.preventDefault(); });
   formAzi.addEventListener('submit',  (e) => { if (!basicValidate(formAzi))  e.preventDefault(); });
 })();
+
