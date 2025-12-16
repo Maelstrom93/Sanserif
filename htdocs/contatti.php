@@ -2,7 +2,8 @@
 require_once 'assets/funzioni/funzioni.php';
 log_visita('Contatti');
 require_once __DIR__ . '/assets/funzioni/session_https.php';
-ss_bootstrap_https_session();
+ssBootstrapHttpsSession();
+
 
 
 
