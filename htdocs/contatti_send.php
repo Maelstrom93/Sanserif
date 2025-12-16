@@ -9,15 +9,27 @@ declare(strict_types=1);
  * - redirect con ok/err
  */
 
-$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+$secure =
+  (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+  || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
+// Se vuoi che in produzione sia SEMPRE https:
+if (!$secure) {
+  $host = $_SERVER['HTTP_HOST'] ?? '';
+  $uri  = $_SERVER['REQUEST_URI'] ?? '/';
+  header('Location: https://' . $host . $uri, true, 301);
+  exit;
+}
+
 session_set_cookie_params([
   'lifetime' => 0,
   'path'     => '/',
   'domain'   => '',
-  'secure'   => $secure,
+  'secure'   => true,     // ora è safe perché stai forzando https
   'httponly' => true,
-  'samesite' => 'Lax'
+  'samesite' => 'Lax',
 ]);
+
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
@@ -103,3 +115,4 @@ if ($mailOk) {
   header('Location: /contatti?err=' . $code, true, 303);
 }
 exit;
+
